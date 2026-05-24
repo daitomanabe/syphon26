@@ -4,8 +4,8 @@ This is the ordered implementation queue after the native in-process transport M
 
 ## Active release-gate queue
 
-- [ ] Add a repeatable app-to-app stability runner that records producer/consumer FPS, RSS memory, and file-descriptor counts.
-- [ ] Smoke-test the stability runner with short 1080p60 and max-throughput runs.
+- [x] Add a repeatable app-to-app stability runner that records producer/consumer FPS, RSS memory, and file-descriptor counts.
+- [x] Smoke-test the stability runner with short 1080p60 and max-throughput runs.
 - [ ] Run and publish a 30 minute 1080p60 BGRA8 app-to-app stability result.
 - [ ] Run and publish a 30 minute 4K60 BGRA8 app-to-app stability result.
 - [ ] Run and publish a 10 minute 1080p max-throughput BGRA8 app-to-app stability result.
