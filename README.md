@@ -55,6 +55,8 @@ The first production implementation should focus only on the Syphon26 native tra
 7. Benchmark gates against classic Syphon at 1080p60, 4K60, 4K120, RGBA16F, and max-throughput workloads.
 
 See [NATIVE_TRANSPORT_TODO.md](NATIVE_TRANSPORT_TODO.md) for the implementation checklist.
+See [API_DESIGN.md](API_DESIGN.md) for the Phase 1 `Syphon26Server` / `Syphon26Client` API surface.
+See [VALIDATION_BENCHMARK_PLAN.md](VALIDATION_BENCHMARK_PLAN.md) for validation and classic Syphon comparison benchmarks.
 
 ## Phase 1 Principles
 

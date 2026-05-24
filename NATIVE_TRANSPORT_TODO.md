@@ -13,10 +13,15 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Public API
 
+- [ ] Review and lock `API_DESIGN.md`.
 - [ ] Add `Syphon26Server`.
 - [ ] Add `Syphon26Client`.
 - [ ] Add `Syphon26Frame`.
 - [ ] Add `Syphon26StreamDescription`.
+- [ ] Add `Syphon26Directory`.
+- [ ] Add `Syphon26ServerDrawable`.
+- [ ] Add `Syphon26DiagnosticsSnapshot`.
+- [ ] Add `Syphon26ErrorDomain`.
 - [ ] Add Swift-friendly nullability and lightweight generics to Objective-C headers.
 - [ ] Keep API names independent from classic Syphon classes.
 - [ ] Expose transport capability metadata:
@@ -102,6 +107,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Benchmark Gates
 
+- [ ] Follow `VALIDATION_BENCHMARK_PLAN.md`.
 - [ ] 1920x1080@60 BGRA8.
 - [ ] 3840x2160@60 BGRA8.
 - [ ] 3840x2160@120 BGRA8 when hardware supports it.
