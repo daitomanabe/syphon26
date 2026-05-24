@@ -10,7 +10,7 @@ This is the ordered implementation queue after the native in-process transport M
 - [x] Recreate client-side `MTLSharedEvent` from received handles.
 - [x] Route `Syphon26Server.start()` through the control plane when cross-process mode is enabled.
 - [x] Route `Syphon26Client.start()` through the control plane when attaching by stream ID.
-- [ ] Validate one producer and one consumer through the XPC transport path.
+- [x] Validate one producer and one consumer through the XPC transport path.
 - [ ] Validate 2, 4, 8, and 16 consumer fan-out through the XPC transport path.
 
 ## 2. Lifecycle cleanup and isolation

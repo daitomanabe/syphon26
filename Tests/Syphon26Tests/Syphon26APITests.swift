@@ -276,6 +276,52 @@ func clientStartRegistersConsumerWithControlPlaneByStreamID() throws {
 }
 
 @Test
+func clientReceivesFrameThroughControlPlaneTransportPath() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+    let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Control Frame Source",
+            device: device,
+            width: 64,
+            height: 64,
+            syncMode: .sequencePolling,
+            controlPlane: controlPlane
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(
+        configuration: Syphon26ClientConfiguration(
+            device: device,
+            streamID: server.streamID,
+            controlPlane: controlPlane
+        )
+    )
+    try client.start()
+    defer { client.stop() }
+
+    let drawable = try server.acquireDrawable()
+    let commandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+
+    let frame = try #require(try client.copyLatestFrame())
+    #expect(frame.sequence == 1)
+    #expect(frame.texture.width == 64)
+    #expect(frame.texture.height == 64)
+    #expect(client.diagnosticsSnapshot().observedFrames == 1)
+    #expect(client.diagnosticsSnapshot().xpcMessagesSent == 4)
+}
+
+@Test
 func directorySeesRunningServer() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Directory Stream", device: device, width: 64, height: 64)

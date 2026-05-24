@@ -85,6 +85,9 @@ public final class Syphon26Client: @unchecked Sendable {
     }
 
     public func copyLatestFrame() throws -> Syphon26Frame? {
+        if let controlPlane = configuration.controlPlane {
+            return try copyLatestFrameFromControlPlane(controlPlane)
+        }
         guard isRunning, let transportStream else {
             throw Syphon26Error.transportUnavailable
         }
@@ -204,6 +207,61 @@ public final class Syphon26Client: @unchecked Sendable {
             return firstStream.streamID
         }
         throw Syphon26Error.streamNotFound
+    }
+
+    private func copyLatestFrameFromControlPlane(_ controlPlane: Syphon26ControlPlane) throws -> Syphon26Frame? {
+        guard isRunning, let streamID, let streamDescription else {
+            throw Syphon26Error.transportUnavailable
+        }
+        let state = try controlPlane.copySharedState(streamID: streamID)
+        try state.validate()
+        guard state.sequence > lastPresentedSequence else {
+            updateDiagnostics { diagnostics in
+                diagnostics.repeatedReads += 1
+                diagnostics.xpcMessagesSent += 1
+                diagnostics.xpcMessagesReceived += 1
+            }
+            hasNewFrame = false
+            return nil
+        }
+        guard let slot = xpcResolvedSlots.first(where: { $0.descriptor.slotIndex == Int(state.currentSlot) }) else {
+            throw Syphon26Error.ioSurfaceHandoffFailed
+        }
+        let frame = Syphon26Frame(
+            texture: slot.texture,
+            sequence: state.sequence,
+            timestamp: 0,
+            streamDescription: streamDescription,
+            requiresGPUWait: xpcSharedEvent != nil,
+            sharedEvent: xpcSharedEvent,
+            sharedEventValue: state.sequence,
+            waitDidEncode: { [weak self] in
+                self?.updateDiagnostics { diagnostics in
+                    diagnostics.sharedEventWaits += 1
+                }
+            },
+            waitDidComplete: { [weak self] elapsedNanoseconds in
+                self?.updateDiagnostics { diagnostics in
+                    diagnostics.gpuWaitNanoseconds += elapsedNanoseconds
+                }
+            }
+        )
+        if lastPresentedSequence > 0, frame.sequence > lastPresentedSequence + 1 {
+            let missedFrames = frame.sequence - lastPresentedSequence - 1
+            updateDiagnostics { diagnostics in
+                diagnostics.missedFrames += missedFrames
+            }
+        }
+        lastPresentedSequence = frame.sequence
+        latestSequence = frame.sequence
+        hasNewFrame = false
+        updateDiagnostics { diagnostics in
+            diagnostics.observedFrames += 1
+            diagnostics.currentConsumerLagFrames = 0
+            diagnostics.xpcMessagesSent += 1
+            diagnostics.xpcMessagesReceived += 1
+        }
+        return frame
     }
 
     private func updateDiagnostics(_ body: (inout Syphon26DiagnosticsSnapshot) -> Void) {

@@ -142,6 +142,19 @@ struct Syphon26XPCSharedEventHandleResponse: Codable, Sendable {
     var hasSharedEventHandle: Bool
 }
 
+struct Syphon26XPCSharedStateRequest: Codable, Sendable {
+    var streamID: Syphon26StreamID
+}
+
+struct Syphon26XPCSharedStateUpdateRequest: Codable, Sendable {
+    var streamID: Syphon26StreamID
+    var state: Syphon26SharedState
+}
+
+struct Syphon26XPCSharedStateResponse: Codable, Sendable {
+    var state: Syphon26SharedState
+}
+
 struct Syphon26XPCIOSurfaceSlot {
     var descriptor: Syphon26XPCIOSurfaceSlotDescriptor
     var surface: IOSurfaceRef
@@ -167,6 +180,8 @@ protocol Syphon26XPCControlServicing {
         _ requestData: Data,
         withReply reply: @escaping (Data?, MTLSharedEventHandle?, NSError?) -> Void
     )
+    func updateSharedState(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
+    func copySharedState(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
     func listStreams(withReply reply: @escaping (Data?, NSError?) -> Void)
 }
 
@@ -176,6 +191,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
     private var slotDescriptorsByStream: [Syphon26StreamID: [Syphon26XPCIOSurfaceSlotDescriptor]] = [:]
     private var surfacesByStream: [Syphon26StreamID: [IOSurfaceRef]] = [:]
     private var sharedEventHandlesByStream: [Syphon26StreamID: MTLSharedEventHandle] = [:]
+    private var sharedStatesByStream: [Syphon26StreamID: Syphon26SharedState] = [:]
     private var consumersByStream: [Syphon26StreamID: Set<String>] = [:]
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -218,6 +234,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             slotDescriptorsByStream[request.stream.streamID] = request.slots
             surfacesByStream[request.stream.streamID] = surfaces
             sharedEventHandlesByStream[request.stream.streamID] = sharedEventHandle
+            sharedStatesByStream[request.stream.streamID] = Syphon26SharedState(description: request.stream.makeDescription())
             consumersByStream[request.stream.streamID, default: []] = consumersByStream[request.stream.streamID, default: []]
             lock.unlock()
             try replyEncoded(
@@ -243,6 +260,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             slotDescriptorsByStream.removeValue(forKey: request.streamID)
             surfacesByStream.removeValue(forKey: request.streamID)
             sharedEventHandlesByStream.removeValue(forKey: request.streamID)
+            sharedStatesByStream.removeValue(forKey: request.streamID)
             consumersByStream.removeValue(forKey: request.streamID)
             lock.unlock()
             reply(Data(), nil)
@@ -325,6 +343,41 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             reply(try encoder.encode(response), handle, nil)
         } catch {
             reply(nil, nil, nsError(Syphon26Error.invalidConfiguration))
+        }
+    }
+
+    func updateSharedState(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        do {
+            let request = try decoder.decode(Syphon26XPCSharedStateUpdateRequest.self, from: requestData)
+            lock.lock()
+            guard streams[request.streamID] != nil else {
+                lock.unlock()
+                reply(nil, nsError(Syphon26Error.streamNotFound))
+                return
+            }
+            sharedStatesByStream[request.streamID] = request.state
+            lock.unlock()
+            reply(Data(), nil)
+        } catch let error as Syphon26Error {
+            reply(nil, nsError(error))
+        } catch {
+            reply(nil, nsError(Syphon26Error.invalidConfiguration))
+        }
+    }
+
+    func copySharedState(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        do {
+            let request = try decoder.decode(Syphon26XPCSharedStateRequest.self, from: requestData)
+            lock.lock()
+            guard let state = sharedStatesByStream[request.streamID] else {
+                lock.unlock()
+                reply(nil, nsError(Syphon26Error.streamNotFound))
+                return
+            }
+            lock.unlock()
+            try replyEncoded(Syphon26XPCSharedStateResponse(state: state), reply: reply)
+        } catch {
+            reply(nil, nsError(Syphon26Error.invalidConfiguration))
         }
     }
 
@@ -524,6 +577,21 @@ final class Syphon26XPCControlClient {
             return handle
         }
         return nil
+    }
+
+    func updateSharedState(streamID: Syphon26StreamID, state: Syphon26SharedState) throws {
+        let request = Syphon26XPCSharedStateUpdateRequest(streamID: streamID, state: state)
+        _ = try perform { service, reply in
+            service.updateSharedState(try encoder.encode(request), withReply: reply)
+        }
+    }
+
+    func copySharedState(streamID: Syphon26StreamID) throws -> Syphon26SharedState {
+        let request = Syphon26XPCSharedStateRequest(streamID: streamID)
+        let responseData = try perform { service, reply in
+            service.copySharedState(try encoder.encode(request), withReply: reply)
+        }
+        return try decoder.decode(Syphon26XPCSharedStateResponse.self, from: responseData).state
     }
 
     func retireConsumer(streamID: Syphon26StreamID, consumerID: String) throws {

@@ -1,7 +1,7 @@
 import Foundation
 import Metal
 
-struct Syphon26SharedState: Sendable, Equatable {
+struct Syphon26SharedState: Sendable, Codable, Equatable {
     static let magic: UInt64 = 0x535950484F4E3236
     static let version: UInt32 = 1
     static let headerSize: UInt32 = 128

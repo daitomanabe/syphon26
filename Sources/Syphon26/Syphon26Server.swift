@@ -79,12 +79,21 @@ public final class Syphon26Server: @unchecked Sendable {
             diagnostics.xpcMessagesSent += 1
             diagnostics.xpcMessagesReceived += 1
         }
+        let sharedStateDidChange: (@Sendable (Syphon26SharedState) -> Void)?
+        if let controlPlane = configuration.controlPlane {
+            sharedStateDidChange = { [streamID] state in
+                try? controlPlane.updateSharedState(streamID: streamID, state: state)
+            }
+        } else {
+            sharedStateDidChange = nil
+        }
         let stream = Syphon26TransportStream(
             description: streamDescription,
             slots: textures,
             diagnostics: diagnostics,
             maximumProducerWaitNanoseconds: configuration.maximumProducerWaitNanoseconds,
-            sharedEvent: syncResolution.sharedEvent
+            sharedEvent: syncResolution.sharedEvent,
+            sharedStateDidChange: sharedStateDidChange
         )
         Syphon26TransportRegistry.shared.register(stream)
         transportStream = stream

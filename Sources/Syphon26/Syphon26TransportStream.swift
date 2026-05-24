@@ -33,6 +33,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
     private let sharedEvent: (any MTLSharedEvent)?
     private var sharedState: Syphon26SharedState
     private let maximumProducerWaitNanoseconds: UInt64
+    private let sharedStateDidChange: (@Sendable (Syphon26SharedState) -> Void)?
 
     private(set) var description: Syphon26StreamDescription
 
@@ -41,7 +42,8 @@ final class Syphon26TransportStream: @unchecked Sendable {
         slots: [Syphon26SlotResource],
         diagnostics: Syphon26DiagnosticsSnapshot,
         maximumProducerWaitNanoseconds: UInt64 = 0,
-        sharedEvent: (any MTLSharedEvent)? = nil
+        sharedEvent: (any MTLSharedEvent)? = nil,
+        sharedStateDidChange: (@Sendable (Syphon26SharedState) -> Void)? = nil
     ) {
         self.description = description
         self.slots = slots.enumerated().map { index, resource in
@@ -60,6 +62,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         self.sharedEvent = sharedEvent
         self.sharedState = Syphon26SharedState(description: description)
         self.maximumProducerWaitNanoseconds = maximumProducerWaitNanoseconds
+        self.sharedStateDidChange = sharedStateDidChange
     }
 
     func acquireDrawable() throws -> Syphon26ServerDrawable {
@@ -287,7 +290,9 @@ final class Syphon26TransportStream: @unchecked Sendable {
         serverDiagnostics.publishedFrames += 1
         serverDiagnostics.activeClientCount = activeClients.count
         updateConsumerLagLocked()
+        let stateSnapshot = sharedState
         lock.unlock()
+        sharedStateDidChange?(stateSnapshot)
     }
 
     private func selectSlotIndexLocked() -> Int? {

@@ -50,6 +50,14 @@ public final class Syphon26ControlPlane: @unchecked Sendable {
         return try Syphon26XPCTransportResolver.makeSharedEvent(from: handle, device: device)
     }
 
+    func updateSharedState(streamID: Syphon26StreamID, state: Syphon26SharedState) throws {
+        try client.updateSharedState(streamID: streamID, state: state)
+    }
+
+    func copySharedState(streamID: Syphon26StreamID) throws -> Syphon26SharedState {
+        try client.copySharedState(streamID: streamID)
+    }
+
     func listStreams() throws -> [Syphon26StreamDescription] {
         try client.listStreams()
     }
