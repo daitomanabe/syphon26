@@ -48,6 +48,7 @@ The Swift library product is the Phase 1 embedding surface for Swift/AppKit/Meta
 - `Syphon26ControlPlane()`
 - `Syphon26ControlPlane(machServiceName:)`
 - `Syphon26ControlPlane.streams()`
+- `Syphon26ControlPlane.activeConsumerCount(streamID:)`
 - `Syphon26ControlPlaneServiceMain.runDefault()`
 - `Syphon26ControlPlaneServiceMain.run(machServiceName:)`
 
@@ -442,6 +443,7 @@ Internal messages:
 - consumer registration
 - consumer retirement
 - stream list query
+- stream diagnostics query
 
 The current control-plane payload exchanges typed stream metadata, IOSurface references, `MTLSharedEventHandle`, and compact shared-state snapshots. Those payloads remain private implementation details and should not become public API unless an advanced use case requires them.
 

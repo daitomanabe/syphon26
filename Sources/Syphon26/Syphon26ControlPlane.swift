@@ -78,7 +78,7 @@ public final class Syphon26ControlPlane: @unchecked Sendable {
         try client.listStreams()
     }
 
-    func activeConsumerCount(streamID: Syphon26StreamID) throws -> Int {
+    public func activeConsumerCount(streamID: Syphon26StreamID) throws -> Int {
         try client.activeConsumerCount(streamID: streamID)
     }
 }

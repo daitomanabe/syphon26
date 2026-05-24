@@ -8,6 +8,14 @@
 
 `Syphon26SimpleClient` is the minimal consumer example. It attaches to the first visible Syphon26 stream unless `--stream-id` or `--stream-name` is provided, waits on the shared event when required, and reports observed frame sequences.
 
+## Simple Server App
+
+`Syphon26SimpleServerApp` is the AppKit control-panel version of the server. It can choose resolution and frame rate automatically from the current display or manually from UI fields, pick BGRA8 or RGBA16F, and show stream ID, published frames, client count, actual publish FPS, sync mode, and transport diagnostics.
+
+## Simple Client App
+
+`Syphon26SimpleClientApp` is the AppKit control-panel version of the client. It lists visible Syphon26 streams, connects to a selected stream, supports automatic or manually expected resolution and frame-rate checks, and shows observed FPS, frame size, repeated reads, sequence, sync mode, and diagnostics.
+
 ## Run Both
 
 ```bash
@@ -15,5 +23,11 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_simple_pair
 ```
 
 The pair script gives the server and client the same stream name, so the client does not accidentally attach to another visible Syphon26 stream on a shared control-plane service.
+
+Run the UI pair:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_simple_ui_pair.sh
+```
 
 Use `INTEGRATION.md` for the app-embedding flow.

@@ -13,7 +13,9 @@ let package = Package(
         .executable(name: "Syphon26SampleProducer", targets: ["Syphon26SampleProducer"]),
         .executable(name: "Syphon26SampleConsumer", targets: ["Syphon26SampleConsumer"]),
         .executable(name: "Syphon26SimpleServer", targets: ["Syphon26SimpleServer"]),
-        .executable(name: "Syphon26SimpleClient", targets: ["Syphon26SimpleClient"])
+        .executable(name: "Syphon26SimpleClient", targets: ["Syphon26SimpleClient"]),
+        .executable(name: "Syphon26SimpleServerApp", targets: ["Syphon26SimpleServerApp"]),
+        .executable(name: "Syphon26SimpleClientApp", targets: ["Syphon26SimpleClientApp"])
     ],
     targets: [
         .target(
@@ -67,6 +69,30 @@ let package = Package(
             path: "Examples/SimpleClient",
             swiftSettings: [
                 .enableUpcomingFeature("ExistentialAny")
+            ]
+        ),
+        .executableTarget(
+            name: "Syphon26SimpleServerApp",
+            dependencies: ["Syphon26"],
+            path: "Examples/SimpleServerApp",
+            swiftSettings: [
+                .enableUpcomingFeature("ExistentialAny")
+            ],
+            linkerSettings: [
+                .linkedFramework("AppKit"),
+                .linkedFramework("Metal")
+            ]
+        ),
+        .executableTarget(
+            name: "Syphon26SimpleClientApp",
+            dependencies: ["Syphon26"],
+            path: "Examples/SimpleClientApp",
+            swiftSettings: [
+                .enableUpcomingFeature("ExistentialAny")
+            ],
+            linkerSettings: [
+                .linkedFramework("AppKit"),
+                .linkedFramework("Metal")
             ]
         ),
         .testTarget(

@@ -19,6 +19,9 @@ func syphon26SwiftCompileOnly(device: any MTLDevice) throws {
     _ = server.streamDescription.transportCapabilities.ringSlotCount
     try server.start()
     server.resetDiagnostics()
+    let controlPlane = Syphon26ControlPlane()
+    _ = try? controlPlane.streams()
+    _ = try? controlPlane.activeConsumerCount(streamID: server.streamID)
     server.stop()
 
     let streams = Syphon26Directory.shared.streams()

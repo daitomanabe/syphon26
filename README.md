@@ -66,6 +66,7 @@ See [FORMAT_SUPPORT.md](FORMAT_SUPPORT.md) for supported formats and deferred mu
 - `Sources/Syphon26/`: core Swift implementation for server, client, control plane, IOSurface-backed transport, diagnostics, and synchronization.
 - `include/Syphon26/`: Objective-C-facing API headers that mirror the intended public wrapper surface.
 - `Examples/`: minimal simple server/client and compile-only API examples for embedding checks.
+- `Examples/SimpleServerApp` and `Examples/SimpleClientApp`: AppKit UI samples for configuring transport settings and watching communication diagnostics.
 - `Samples/`: app-to-app producer, consumer, and control-plane service executables used by validation scripts.
 - `Sources/Syphon26Benchmark/`: in-process benchmark harness for upper-bound transport measurements.
 - `scripts/`: validation, sample-pair, benchmark, and stability runners.
@@ -91,6 +92,12 @@ The sample pair runs a launchd-managed Syphon26 control plane plus separate prod
 ```bash
 scripts/run_bgra8_sample_pair.sh --duration 3 --width 1920 --height 1080 --fps 60
 scripts/run_rgba16f_sample_pair.sh --duration 3 --width 1920 --height 1080 --fps 60
+```
+
+For interactive configuration and communication status, run the AppKit UI pair:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_simple_ui_pair.sh
 ```
 
 ## Phase 1 Principles
