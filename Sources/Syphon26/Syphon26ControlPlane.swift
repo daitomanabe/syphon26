@@ -4,6 +4,10 @@ import Metal
 public final class Syphon26ControlPlane: @unchecked Sendable {
     private let client: Syphon26XPCControlClient
 
+    public convenience init() {
+        self.init(machServiceName: Syphon26.defaultControlPlaneMachServiceName)
+    }
+
     public init(endpoint: NSXPCListenerEndpoint) {
         self.client = Syphon26XPCControlClient(endpoint: endpoint)
     }
@@ -104,6 +108,10 @@ public final class Syphon26ControlPlaneServer: @unchecked Sendable {
 }
 
 public enum Syphon26ControlPlaneServiceMain {
+    public static func runDefault() throws -> Never {
+        try run(machServiceName: Syphon26.defaultControlPlaneMachServiceName)
+    }
+
     public static func run(machServiceName: String) throws -> Never {
         let listener = Syphon26XPCControlListener(
             listener: NSXPCListener(machServiceName: machServiceName),

@@ -2,7 +2,7 @@ import Foundation
 import Syphon26
 
 do {
-    var machServiceName = "com.syphon26.samples.control-plane"
+    var machServiceName = Syphon26.defaultControlPlaneMachServiceName
     var arguments = Array(CommandLine.arguments.dropFirst())
     while !arguments.isEmpty {
         let key = arguments.removeFirst()

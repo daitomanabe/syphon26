@@ -56,11 +56,18 @@ The first production implementation should focus only on the Syphon26 native tra
 
 See [NATIVE_TRANSPORT_TODO.md](NATIVE_TRANSPORT_TODO.md) for the implementation checklist.
 See [API_DESIGN.md](API_DESIGN.md) for the Phase 1 `Syphon26Server` / `Syphon26Client` API surface.
+See [INTEGRATION.md](INTEGRATION.md) for SwiftPM app integration and the control-plane service setup.
 See [VALIDATION_BENCHMARK_PLAN.md](VALIDATION_BENCHMARK_PLAN.md) for validation and classic Syphon comparison benchmarks.
 See [BENCHMARK_RESULTS_20260524.md](BENCHMARK_RESULTS_20260524.md) for the first MVP benchmark checkpoint.
 See [FORMAT_SUPPORT.md](FORMAT_SUPPORT.md) for supported formats and deferred multi-plane requirements.
 
 ## Native Samples
+
+Minimal examples for embedding into other Swift/Metal apps:
+
+```bash
+scripts/run_simple_pair.sh --duration 5 --width 1920 --height 1080 --fps 60
+```
 
 The sample pair runs a launchd-managed Syphon26 control plane plus separate producer and consumer processes:
 

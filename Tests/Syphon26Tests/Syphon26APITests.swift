@@ -17,6 +17,13 @@ func waitUntil(_ predicate: () throws -> Bool) throws -> Bool {
 }
 
 @Test
+func defaultControlPlaneNameIsPublicAndStable() throws {
+    #expect(Syphon26.defaultControlPlaneMachServiceName == "com.syphon26.control-plane")
+    let controlPlane = Syphon26ControlPlane()
+    controlPlane.invalidate()
+}
+
+@Test
 func serverConfigurationValidationRejectsInvalidSize() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Invalid", device: device, width: 0, height: 1080)

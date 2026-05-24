@@ -39,6 +39,19 @@ Private headers:
 
 Swift API is exposed by the `Syphon26` SwiftPM library target. Objective-C bridge headers lock the intended wrapper shape and are validated with `scripts/validate_api_examples.sh`.
 
+## SwiftPM Integration Surface
+
+The Swift library product is the Phase 1 embedding surface for Swift/AppKit/Metal apps:
+
+- `Syphon26.version`
+- `Syphon26.defaultControlPlaneMachServiceName`
+- `Syphon26ControlPlane()`
+- `Syphon26ControlPlane(machServiceName:)`
+- `Syphon26ControlPlaneServiceMain.runDefault()`
+- `Syphon26ControlPlaneServiceMain.run(machServiceName:)`
+
+Cross-process apps must share one launchd-managed `Syphon26ControlPlaneService` Mach service. `Syphon26ControlPlane()` uses `Syphon26.defaultControlPlaneMachServiceName`.
+
 ## Core Types
 
 ### `Syphon26StreamID`

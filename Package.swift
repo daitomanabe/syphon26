@@ -11,7 +11,9 @@ let package = Package(
         .executable(name: "Syphon26Benchmark", targets: ["Syphon26Benchmark"]),
         .executable(name: "Syphon26ControlPlaneService", targets: ["Syphon26ControlPlaneService"]),
         .executable(name: "Syphon26SampleProducer", targets: ["Syphon26SampleProducer"]),
-        .executable(name: "Syphon26SampleConsumer", targets: ["Syphon26SampleConsumer"])
+        .executable(name: "Syphon26SampleConsumer", targets: ["Syphon26SampleConsumer"]),
+        .executable(name: "Syphon26SimpleServer", targets: ["Syphon26SimpleServer"]),
+        .executable(name: "Syphon26SimpleClient", targets: ["Syphon26SimpleClient"])
     ],
     targets: [
         .target(
@@ -47,6 +49,22 @@ let package = Package(
             name: "Syphon26SampleConsumer",
             dependencies: ["Syphon26"],
             path: "Samples/Syphon26SampleConsumer",
+            swiftSettings: [
+                .enableUpcomingFeature("ExistentialAny")
+            ]
+        ),
+        .executableTarget(
+            name: "Syphon26SimpleServer",
+            dependencies: ["Syphon26"],
+            path: "Examples/SimpleServer",
+            swiftSettings: [
+                .enableUpcomingFeature("ExistentialAny")
+            ]
+        ),
+        .executableTarget(
+            name: "Syphon26SimpleClient",
+            dependencies: ["Syphon26"],
+            path: "Examples/SimpleClient",
             swiftSettings: [
                 .enableUpcomingFeature("ExistentialAny")
             ]
