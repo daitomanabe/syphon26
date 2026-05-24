@@ -5,7 +5,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 ## Scope
 
 - [x] Build a new transport, not a wrapper around the original Syphon Framework.
-- [ ] Support local app-to-app frame sharing on current macOS.
+- [x] Support local app-to-app frame sharing on current macOS.
 - [x] Use Metal textures and IOSurface-backed storage in the fast path.
 - [x] Avoid CPU texture readback in the fast path.
 - [x] Defer classic Syphon compatibility bridges until the native transport is stable.
@@ -100,8 +100,8 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Samples
 
-- [ ] Add a minimal Metal producer app.
-- [ ] Add a minimal Metal consumer app.
+- [x] Add a minimal Metal producer app.
+- [x] Add a minimal Metal consumer app.
 - [x] Add a multi-consumer benchmark runner.
 - [x] Add a slow-consumer benchmark mode.
 - [x] Add an RGBA16F benchmark mode after format support lands.
@@ -126,5 +126,5 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Add the client-side ring reader.
 - [x] Add sequence polling sync first.
 - [x] Add `MTLSharedEvent` sync through XPC second.
-- [ ] Add BGRA8 producer and consumer samples.
+- [x] Add BGRA8 producer and consumer samples.
 - [x] Run 1080p60 and 1080p max-throughput benchmarks.

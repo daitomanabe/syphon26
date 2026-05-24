@@ -104,8 +104,11 @@ public final class Syphon26ControlPlaneServer: @unchecked Sendable {
 }
 
 public enum Syphon26ControlPlaneServiceMain {
-    public static func run() throws -> Never {
-        let listener = Syphon26XPCControlListener(listener: .service())
+    public static func run(machServiceName: String) throws -> Never {
+        let listener = Syphon26XPCControlListener(
+            listener: NSXPCListener(machServiceName: machServiceName),
+            retiresConnectionsOnInvalidation: false
+        )
         try listener.start()
         RunLoop.current.run()
         fatalError("RunLoop.current.run() returned unexpectedly")

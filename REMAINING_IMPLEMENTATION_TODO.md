@@ -33,11 +33,11 @@ This is the ordered implementation queue after the native in-process transport M
 
 ## 4. Native samples
 
-- [ ] Add minimal Metal producer sample.
-- [ ] Add minimal Metal consumer sample.
-- [ ] Add BGRA8 producer/consumer sample pair.
-- [ ] Add RGBA16F producer/consumer sample pair.
-- [ ] Add sample launch scripts for local app-to-app validation.
+- [x] Add minimal Metal producer sample.
+- [x] Add minimal Metal consumer sample.
+- [x] Add BGRA8 producer/consumer sample pair.
+- [x] Add RGBA16F producer/consumer sample pair.
+- [x] Add sample launch scripts for local app-to-app validation.
 
 ## 5. Production benchmark pass
 

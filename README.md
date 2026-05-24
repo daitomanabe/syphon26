@@ -59,6 +59,15 @@ See [API_DESIGN.md](API_DESIGN.md) for the Phase 1 `Syphon26Server` / `Syphon26C
 See [VALIDATION_BENCHMARK_PLAN.md](VALIDATION_BENCHMARK_PLAN.md) for validation and classic Syphon comparison benchmarks.
 See [BENCHMARK_RESULTS_20260524.md](BENCHMARK_RESULTS_20260524.md) for the first MVP benchmark checkpoint.
 
+## Native Samples
+
+The sample pair runs a launchd-managed Syphon26 control plane plus separate producer and consumer processes:
+
+```bash
+scripts/run_bgra8_sample_pair.sh --duration 3 --width 1920 --height 1080 --fps 60
+scripts/run_rgba16f_sample_pair.sh --duration 3 --width 1920 --height 1080 --fps 60
+```
+
 ## Phase 1 Principles
 
 - Keep BGRA8 as the default low-risk format.

@@ -388,6 +388,13 @@ final class Syphon26XPCControlService: NSObject {
             let request = try decoder.decode(Syphon26XPCSharedStateRequest.self, from: requestData)
             lock.lock()
             guard let state = sharedStatesByStream[request.streamID] else {
+                if let stream = streams[request.streamID] {
+                    let state = Syphon26SharedState(description: stream.makeDescription())
+                    sharedStatesByStream[request.streamID] = state
+                    lock.unlock()
+                    try replyEncoded(Syphon26XPCSharedStateResponse(state: state), reply: reply)
+                    return
+                }
                 lock.unlock()
                 reply(nil, nsError(Syphon26Error.streamNotFound))
                 return
@@ -552,15 +559,21 @@ final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
     private let listener: NSXPCListener
     private let service: Syphon26XPCControlService
     private let namespace: Syphon26ControlPlaneNamespace
+    private let retiresConnectionsOnInvalidation: Bool
 
     var endpoint: NSXPCListenerEndpoint {
         listener.endpoint
     }
 
-    init(namespace: Syphon26ControlPlaneNamespace = .current(), listener: NSXPCListener = .anonymous()) {
+    init(
+        namespace: Syphon26ControlPlaneNamespace = .current(),
+        listener: NSXPCListener = .anonymous(),
+        retiresConnectionsOnInvalidation: Bool = true
+    ) {
         self.listener = listener
         self.service = Syphon26XPCControlService()
         self.namespace = namespace
+        self.retiresConnectionsOnInvalidation = retiresConnectionsOnInvalidation
         super.init()
         self.listener.delegate = self
     }
@@ -582,11 +595,11 @@ final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
         let ownerID = UUID()
         newConnection.exportedInterface = interface
         newConnection.exportedObject = Syphon26XPCControlConnection(service: service, ownerID: ownerID)
+        let retiresConnectionsOnInvalidation = retiresConnectionsOnInvalidation
         newConnection.invalidationHandler = { [service] in
-            service.retireConnection(ownerID)
-        }
-        newConnection.interruptionHandler = { [service] in
-            service.retireConnection(ownerID)
+            if retiresConnectionsOnInvalidation {
+                service.retireConnection(ownerID)
+            }
         }
         newConnection.resume()
         return true
