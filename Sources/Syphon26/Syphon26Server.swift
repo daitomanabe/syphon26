@@ -1,4 +1,6 @@
+import CoreVideo
 import Foundation
+import IOSurface
 import Metal
 
 public final class Syphon26Server: @unchecked Sendable {
@@ -51,7 +53,7 @@ public final class Syphon26Server: @unchecked Sendable {
         if isRunning {
             return
         }
-        let textures = try Self.makeTextures(configuration: configuration)
+        let textures = try Self.makeSlotResources(configuration: configuration)
         let stream = Syphon26TransportStream(
             description: streamDescription,
             slots: textures,
@@ -136,7 +138,26 @@ public final class Syphon26Server: @unchecked Sendable {
         }
     }
 
-    private static func makeTextures(configuration: Syphon26ServerConfiguration) throws -> [any MTLTexture] {
+    private static func makeSlotResources(configuration: Syphon26ServerConfiguration) throws -> [Syphon26SlotResource] {
+        var resources: [Syphon26SlotResource] = []
+        resources.reserveCapacity(configuration.slotCount)
+        for _ in 0..<configuration.slotCount {
+            resources.append(try makeIOSurfaceBackedResource(configuration: configuration))
+        }
+        return resources
+    }
+
+    private static func makeIOSurfaceBackedResource(configuration: Syphon26ServerConfiguration) throws -> Syphon26SlotResource {
+        let attributes: [CFString: Any] = [
+            kIOSurfaceWidth: configuration.width,
+            kIOSurfaceHeight: configuration.height,
+            kIOSurfacePixelFormat: Syphon26PixelFormatSupport.cvPixelFormat(for: configuration.pixelFormat),
+            kIOSurfaceBytesPerElement: Syphon26PixelFormatSupport.bytesPerElement(for: configuration.pixelFormat)
+        ]
+        guard let surface = IOSurfaceCreate(attributes as CFDictionary) else {
+            throw Syphon26Error.transportUnavailable
+        }
+
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: configuration.pixelFormat,
             width: configuration.width,
@@ -144,16 +165,11 @@ public final class Syphon26Server: @unchecked Sendable {
             mipmapped: false
         )
         descriptor.usage = [.renderTarget, .shaderRead, .shaderWrite]
-        descriptor.storageMode = .private
+        descriptor.storageMode = .shared
 
-        var textures: [any MTLTexture] = []
-        textures.reserveCapacity(configuration.slotCount)
-        for _ in 0..<configuration.slotCount {
-            guard let texture = configuration.device.makeTexture(descriptor: descriptor) else {
-                throw Syphon26Error.transportUnavailable
-            }
-            textures.append(texture)
+        guard let texture = configuration.device.makeTexture(descriptor: descriptor, iosurface: surface, plane: 0) else {
+            throw Syphon26Error.transportUnavailable
         }
-        return textures
+        return Syphon26SlotResource(texture: texture, surface: surface)
     }
 }

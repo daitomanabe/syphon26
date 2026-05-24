@@ -1,9 +1,20 @@
 import Foundation
+import IOSurface
 import Metal
+
+final class Syphon26SlotResource: @unchecked Sendable {
+    let texture: any MTLTexture
+    let surface: IOSurfaceRef?
+
+    init(texture: any MTLTexture, surface: IOSurfaceRef?) {
+        self.texture = texture
+        self.surface = surface
+    }
+}
 
 final class Syphon26TransportStream: @unchecked Sendable {
     struct Slot {
-        var texture: any MTLTexture
+        var resource: Syphon26SlotResource
         var sequence: Syphon26Sequence = 0
         var timestamp: Syphon26HostTime = 0
         var metadata: [String: Syphon26MetadataValue] = [:]
@@ -19,9 +30,9 @@ final class Syphon26TransportStream: @unchecked Sendable {
 
     private(set) var description: Syphon26StreamDescription
 
-    init(description: Syphon26StreamDescription, slots: [any MTLTexture], diagnostics: Syphon26DiagnosticsSnapshot) {
+    init(description: Syphon26StreamDescription, slots: [Syphon26SlotResource], diagnostics: Syphon26DiagnosticsSnapshot) {
         self.description = description
-        self.slots = slots.map { Slot(texture: $0) }
+        self.slots = slots.map { Slot(resource: $0) }
         self.serverDiagnostics = diagnostics
     }
 
@@ -30,7 +41,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         let slotIndex = nextSlotIndex
         nextSlotIndex = (nextSlotIndex + 1) % slots.count
         let drawableSequence = sequence + 1
-        let texture = slots[slotIndex].texture
+        let texture = slots[slotIndex].resource.texture
         let streamDescription = description
         lock.unlock()
 
@@ -100,7 +111,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         lock.unlock()
 
         return Syphon26Frame(
-            texture: slot.texture,
+            texture: slot.resource.texture,
             sequence: slot.sequence,
             timestamp: slot.timestamp,
             streamDescription: streamDescription,
@@ -191,4 +202,3 @@ final class Syphon26TransportRegistry: @unchecked Sendable {
         return descriptions
     }
 }
-

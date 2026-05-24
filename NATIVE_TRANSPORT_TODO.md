@@ -44,7 +44,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
   - pixel format
   - timestamp
 - [x] Add an initial in-process ring stream for API and test validation.
-- [ ] Implement triple-buffered IOSurface-backed slots.
+- [x] Implement triple-buffered IOSurface-backed slots.
 - [x] Support configurable slot count.
 - [x] Implement latest-frame consumption semantics.
 - [ ] Track slow consumers without blocking the producer.
