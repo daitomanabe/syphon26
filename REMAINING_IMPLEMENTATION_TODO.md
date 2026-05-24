@@ -52,5 +52,5 @@ This is the ordered implementation queue after the native in-process transport M
 
 ## 6. Deferred format work
 
-- [ ] Keep NV12/P010 multi-plane support deferred until a real pipeline requires it.
-- [ ] Document the exact requirements before adding multi-plane support.
+- [x] Keep NV12/P010 multi-plane support deferred until a real pipeline requires it.
+- [x] Document the exact requirements before adding multi-plane support.

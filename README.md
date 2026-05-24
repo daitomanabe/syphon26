@@ -58,6 +58,7 @@ See [NATIVE_TRANSPORT_TODO.md](NATIVE_TRANSPORT_TODO.md) for the implementation 
 See [API_DESIGN.md](API_DESIGN.md) for the Phase 1 `Syphon26Server` / `Syphon26Client` API surface.
 See [VALIDATION_BENCHMARK_PLAN.md](VALIDATION_BENCHMARK_PLAN.md) for validation and classic Syphon comparison benchmarks.
 See [BENCHMARK_RESULTS_20260524.md](BENCHMARK_RESULTS_20260524.md) for the first MVP benchmark checkpoint.
+See [FORMAT_SUPPORT.md](FORMAT_SUPPORT.md) for supported formats and deferred multi-plane requirements.
 
 ## Native Samples
 

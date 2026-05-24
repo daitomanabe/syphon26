@@ -81,7 +81,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Store transfer function metadata.
 - [x] Store alpha mode metadata.
 - [x] Reject unsupported pixel formats explicitly.
-- [ ] Defer NV12/P010 multi-plane support until a real pipeline requires it.
+- [x] Defer NV12/P010 multi-plane support until a real pipeline requires it.
 
 ## Diagnostics
 
