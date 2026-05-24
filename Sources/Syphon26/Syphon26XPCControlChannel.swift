@@ -557,8 +557,8 @@ final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
         listener.endpoint
     }
 
-    init(namespace: Syphon26ControlPlaneNamespace = .current()) {
-        self.listener = NSXPCListener.anonymous()
+    init(namespace: Syphon26ControlPlaneNamespace = .current(), listener: NSXPCListener = .anonymous()) {
+        self.listener = listener
         self.service = Syphon26XPCControlService()
         self.namespace = namespace
         super.init()
@@ -631,6 +631,12 @@ final class Syphon26XPCControlClient {
 
     init(endpoint: NSXPCListenerEndpoint) {
         self.connection = NSXPCConnection(listenerEndpoint: endpoint)
+        self.connection.remoteObjectInterface = Syphon26XPCControlListener.makeInterface()
+        self.connection.resume()
+    }
+
+    init(machServiceName: String) {
+        self.connection = NSXPCConnection(machServiceName: machServiceName, options: [])
         self.connection.remoteObjectInterface = Syphon26XPCControlListener.makeInterface()
         self.connection.resume()
     }

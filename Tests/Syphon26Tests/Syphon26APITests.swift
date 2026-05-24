@@ -224,6 +224,30 @@ func xpcControlChannelRejectsDifferentUserNamespace() throws {
 }
 
 @Test
+func controlPlaneServerCreatesLocalControlPlanes() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let controlPlaneServer = Syphon26ControlPlaneServer()
+    try controlPlaneServer.start()
+    defer { controlPlaneServer.stop() }
+
+    let producerControlPlane = controlPlaneServer.makeControlPlane()
+    let observerControlPlane = Syphon26ControlPlane(endpoint: controlPlaneServer.endpoint)
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Endpoint Data Source",
+            device: device,
+            width: 32,
+            height: 32,
+            controlPlane: producerControlPlane
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    #expect(try observerControlPlane.listStreams().map(\.streamID) == [server.streamID])
+}
+
+@Test
 func xpcControlChannelExchangesIOSurfaceSlots() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let listener = Syphon26XPCControlListener()

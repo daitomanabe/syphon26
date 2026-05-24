@@ -419,6 +419,8 @@ Stream change handlers must be coalesced and must not be tied to the frame hot p
 
 Phase 1 uses an internal XPC control channel for stream metadata and lifecycle registration. The frame hot path remains Metal/IOSurface-based; XPC is control-plane only.
 
+The Swift developer-preview surface exposes `Syphon26ControlPlane` for endpoint-backed or launchd Mach-service-backed connections, `Syphon26ControlPlaneServer` for embedded same-process bootstrap, and `Syphon26ControlPlaneServiceMain` for a launchd-managed helper process. The Objective-C wrapper header keeps these bootstrap details out of the Phase 1 app-facing API.
+
 Internal messages:
 
 - producer registration

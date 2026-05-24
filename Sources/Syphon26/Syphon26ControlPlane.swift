@@ -8,6 +8,10 @@ public final class Syphon26ControlPlane: @unchecked Sendable {
         self.client = Syphon26XPCControlClient(endpoint: endpoint)
     }
 
+    public init(machServiceName: String) {
+        self.client = Syphon26XPCControlClient(machServiceName: machServiceName)
+    }
+
     public func invalidate() {
         client.invalidate()
     }
@@ -68,5 +72,42 @@ public final class Syphon26ControlPlane: @unchecked Sendable {
 
     func activeConsumerCount(streamID: Syphon26StreamID) throws -> Int {
         try client.activeConsumerCount(streamID: streamID)
+    }
+}
+
+public final class Syphon26ControlPlaneServer: @unchecked Sendable {
+    private let listener: Syphon26XPCControlListener
+
+    public var endpoint: NSXPCListenerEndpoint {
+        listener.endpoint
+    }
+
+    public init() {
+        self.listener = Syphon26XPCControlListener()
+    }
+
+    deinit {
+        listener.stop()
+    }
+
+    public func start() throws {
+        try listener.start()
+    }
+
+    public func stop() {
+        listener.stop()
+    }
+
+    public func makeControlPlane() -> Syphon26ControlPlane {
+        Syphon26ControlPlane(endpoint: endpoint)
+    }
+}
+
+public enum Syphon26ControlPlaneServiceMain {
+    public static func run() throws -> Never {
+        let listener = Syphon26XPCControlListener(listener: .service())
+        try listener.start()
+        RunLoop.current.run()
+        fatalError("RunLoop.current.run() returned unexpectedly")
     }
 }
