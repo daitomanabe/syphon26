@@ -6,7 +6,7 @@ The project is inspired by the original Syphon idea of simple app-to-app frame s
 
 ## Status
 
-This repository is the starting point for a new implementation. The API and internal transport are not stable yet.
+This repository contains the first Syphon26 native-transport implementation. The API and internal transport are usable for Swift/AppKit/Metal experiments and sample apps, but they are still developer-preview surfaces and may change before a stable release.
 
 Current direction:
 
@@ -60,6 +60,23 @@ See [INTEGRATION.md](INTEGRATION.md) for SwiftPM app integration and the control
 See [VALIDATION_BENCHMARK_PLAN.md](VALIDATION_BENCHMARK_PLAN.md) for validation and classic Syphon comparison benchmarks.
 See [BENCHMARK_RESULTS_20260524.md](BENCHMARK_RESULTS_20260524.md) for the first MVP benchmark checkpoint.
 See [FORMAT_SUPPORT.md](FORMAT_SUPPORT.md) for supported formats and deferred multi-plane requirements.
+
+## Repository Layout
+
+- `Sources/Syphon26/`: core Swift implementation for server, client, control plane, IOSurface-backed transport, diagnostics, and synchronization.
+- `include/Syphon26/`: Objective-C-facing API headers that mirror the intended public wrapper surface.
+- `Examples/`: minimal simple server/client and compile-only API examples for embedding checks.
+- `Samples/`: app-to-app producer, consumer, and control-plane service executables used by validation scripts.
+- `Sources/Syphon26Benchmark/`: in-process benchmark harness for upper-bound transport measurements.
+- `scripts/`: validation, sample-pair, benchmark, and stability runners.
+- `benchmark-reports/`: committed benchmark summaries for app-to-app and stability checkpoints.
+- `skills/syphon26-native-transport/`: reusable Codex skill for integrating Syphon26 into another Swift/AppKit/Metal app.
+
+## Reusable Skill
+
+The repo includes a Codex skill at [skills/syphon26-native-transport/SKILL.md](skills/syphon26-native-transport/SKILL.md). Use it when asking an agent to integrate Syphon26 into a different implementation.
+
+The skill encodes the core integration rules: use `Syphon26Server` and `Syphon26Client` directly, share a launchd-managed `Syphon26ControlPlaneService`, keep frames on Metal/IOSurface, honor GPU synchronization with `frame.encodeWait(on:)`, and avoid classic `Syphon.framework`, bridge APIs, CPU readback, screen capture, or window capture in the frame loop.
 
 ## Native Samples
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Syphon26 Native Transport"
+  short_description: "Build Swift/AppKit/Metal apps on the Syphon26 native transport."
+  default_prompt: "Use Syphon26 native transport to implement Metal frame sharing without classic Syphon bridge or CPU readback."
