@@ -116,7 +116,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] 3840x2160 max throughput.
 - [x] 1, 2, 4, 8, and 16 consumer fan-out.
 - [x] Slow consumer delays at 1 ms, 5 ms, and 16 ms.
-- [ ] Verify no CPU readback symbols in fast-path samples.
+- [x] Verify no CPU readback symbols in fast-path samples.
 
 ## First Code Slice
 

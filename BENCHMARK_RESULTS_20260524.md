@@ -69,6 +69,22 @@ Command: `python3 scripts/run_benchmark_matrix.py --matrix 1080p60,4k60,1080pmax
 | 3840x2160@60 RGBA16F | 59.88 | target met |
 | 1920x1080 max RGBA16F | 5395.61 | no classic Syphon baseline |
 
+## Fast-path Sampling
+
+Command:
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build -c release --product Syphon26Benchmark
+.build/release/Syphon26Benchmark --width 1920 --height 1080 --fps 0 --warmup 0.2 --duration 8 --clients 4 --sync sequence-polling --pixel-format bgra8 --client-poll-us 100 --output benchmark-results/fastpath-sample-20260524/run
+sample <benchmark-pid> 3 -file benchmark-results/fastpath-sample-20260524/sample.txt
+```
+
+Result:
+
+- 1920x1080 max BGRA8 with 4 clients: server 5475.78 fps, minimum client 5400.28 fps.
+- `sample` call graph did not contain `CGWindowListCreateImage`, `SLWindowListCreateImage`, `CGContextDrawImage`, `CVPixelBufferLockBaseAddress`, `getBytes`, `replaceRegion`, or `vImage` execution symbols.
+- `vImage` appeared only in the Binary Images section as a loaded framework, not in the sampled call graph.
+
 ## Syphon26 Commands
 
 ```sh
@@ -93,11 +109,11 @@ Passed in this checkpoint:
 - RGBA16F publish/consume validation.
 - 1080p60 fan-out through 16 clients.
 - Slow-consumer 1 ms, 5 ms, and 16 ms matrix.
+- `sample` call-graph check for fast-path CPU readback symbols.
 - Benchmark CLI fixed-FPS and max-throughput smoke runs.
 
 Still required before release-quality benchmark claims:
 
 - Cross-process/XPC control plane.
 - Secure IOSurface handoff over XPC.
-- Trace-based no-CPU-readback validation.
 - Same-run classic Syphon comparison rather than using the sibling baseline artifact.
