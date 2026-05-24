@@ -10,6 +10,7 @@ HEIGHT="1080"
 FPS="60"
 PIXEL_FORMAT="bgra8"
 PRINT_EVERY="120"
+STREAM_NAME="Syphon26 Simple Server"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -31,6 +32,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --pixel-format)
       PIXEL_FORMAT="$2"
+      shift 2
+      ;;
+    --name|--stream-name)
+      STREAM_NAME="$2"
       shift 2
       ;;
     --print-every)
@@ -105,6 +110,7 @@ sleep 0.8
   --duration "$DURATION" \
   --attach-timeout 10 \
   --pixel-format "$PIXEL_FORMAT" \
+  --stream-name "$STREAM_NAME" \
   --print-every "$PRINT_EVERY" >"$CLIENT_LOG" 2>&1 &
 CLIENT_PID=$!
 
@@ -116,6 +122,7 @@ sleep 0.2
   --width "$WIDTH" \
   --height "$HEIGHT" \
   --fps "$FPS" \
+  --name "$STREAM_NAME" \
   --pixel-format "$PIXEL_FORMAT" >"$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
 

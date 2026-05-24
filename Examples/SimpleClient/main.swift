@@ -5,6 +5,7 @@ import Syphon26
 struct SimpleClientOptions {
     var machServiceName = Syphon26.defaultControlPlaneMachServiceName
     var streamID: Syphon26StreamID?
+    var streamName: String?
     var duration: TimeInterval = 5
     var attachTimeout: TimeInterval = 10
     var pixelFormat: MTLPixelFormat = .bgra8Unorm
@@ -28,6 +29,8 @@ func parseOptions() throws -> SimpleClientOptions {
             options.machServiceName = value
         case "--stream-id":
             options.streamID = value
+        case "--stream-name", "--name":
+            options.streamName = value
         case "--duration":
             options.duration = TimeInterval(value) ?? options.duration
         case "--attach-timeout":
@@ -61,12 +64,26 @@ func printHelpAndExit() -> Never {
     Options:
       --mach-service <name>   Default: \(Syphon26.defaultControlPlaneMachServiceName)
       --stream-id <id>        Optional. Defaults to the first visible Syphon26 stream
+      --stream-name <name>    Optional. Polls for a stream with this exact name
       --duration <seconds>    Default: 5
       --attach-timeout <sec>  Default: 10
       --pixel-format <fmt>    bgra8 or rgba16f. Default: bgra8
       --print-every <n>       Print every n observed frames. Default: 60
     """)
     Foundation.exit(0)
+}
+
+func resolveTargetStreamID(
+    controlPlane: Syphon26ControlPlane,
+    options: SimpleClientOptions
+) throws -> Syphon26StreamID? {
+    if let streamID = options.streamID {
+        return streamID
+    }
+    guard let streamName = options.streamName else {
+        return nil
+    }
+    return try controlPlane.streams().first { $0.name == streamName }?.streamID
 }
 
 func attachClient(
@@ -79,10 +96,14 @@ func attachClient(
 
     while Date() < deadline {
         do {
+            let targetStreamID = try resolveTargetStreamID(controlPlane: controlPlane, options: options)
+            if options.streamName != nil, targetStreamID == nil {
+                throw Syphon26Error.streamNotFound
+            }
             let client = try Syphon26Client(
                 configuration: Syphon26ClientConfiguration(
                     device: device,
-                    streamID: options.streamID,
+                    streamID: targetStreamID,
                     preferredPixelFormats: [options.pixelFormat],
                     controlPlane: controlPlane
                 )
