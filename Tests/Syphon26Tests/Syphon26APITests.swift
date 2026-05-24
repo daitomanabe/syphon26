@@ -1,7 +1,19 @@
+import Foundation
 import IOSurface
 import Metal
 import Testing
 @testable import Syphon26
+
+func waitUntil(_ predicate: () throws -> Bool) throws -> Bool {
+    let deadline = Date().addingTimeInterval(1.0)
+    repeat {
+        if try predicate() {
+            return true
+        }
+        Thread.sleep(forTimeInterval: 0.01)
+    } while Date() < deadline
+    return try predicate()
+}
 
 @Test
 func serverConfigurationValidationRejectsInvalidSize() throws {
@@ -374,6 +386,71 @@ func fanoutClientsReceiveFrameThroughControlPlaneTransportPath() throws {
         server.stop()
         listener.stop()
     }
+}
+
+@Test
+func staleProducerIsRemovedWhenControlConnectionInvalidates() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+
+    let observerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let producerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Stale Producer",
+            device: device,
+            width: 64,
+            height: 64,
+            controlPlane: producerControlPlane
+        )
+    )
+    try server.start()
+    #expect(try observerControlPlane.listStreams().map(\.streamID) == [server.streamID])
+
+    producerControlPlane.invalidate()
+    #expect(try waitUntil {
+        try observerControlPlane.listStreams().isEmpty
+    })
+}
+
+@Test
+func staleConsumerIsRemovedWhenControlConnectionInvalidates() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+
+    let producerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let observerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Stale Consumer Source",
+            device: device,
+            width: 64,
+            height: 64,
+            controlPlane: producerControlPlane
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let consumerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let client = try Syphon26Client(
+        configuration: Syphon26ClientConfiguration(
+            device: device,
+            streamID: server.streamID,
+            controlPlane: consumerControlPlane
+        )
+    )
+    try client.start()
+    #expect(try observerControlPlane.activeConsumerCount(streamID: server.streamID) == 1)
+
+    consumerControlPlane.invalidate()
+    #expect(try waitUntil {
+        try observerControlPlane.activeConsumerCount(streamID: server.streamID) == 0
+    })
 }
 
 @Test

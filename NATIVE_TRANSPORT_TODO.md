@@ -58,7 +58,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Exchange `MTLSharedEventHandle` over XPC.
 - [x] Add producer registration and retirement.
 - [x] Add consumer registration and retirement.
-- [ ] Add stale process cleanup.
+- [x] Add stale process cleanup.
 - [ ] Add per-user isolation for any shared memory or temporary state.
 
 ## GPU Synchronization

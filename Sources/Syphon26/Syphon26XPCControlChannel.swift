@@ -155,6 +155,14 @@ struct Syphon26XPCSharedStateResponse: Codable, Sendable {
     var state: Syphon26SharedState
 }
 
+struct Syphon26XPCStreamDiagnosticsRequest: Codable, Sendable {
+    var streamID: Syphon26StreamID
+}
+
+struct Syphon26XPCStreamDiagnosticsResponse: Codable, Sendable {
+    var activeConsumerCount: Int
+}
+
 struct Syphon26XPCIOSurfaceSlot {
     var descriptor: Syphon26XPCIOSurfaceSlotDescriptor
     var surface: IOSurfaceRef
@@ -182,10 +190,11 @@ protocol Syphon26XPCControlServicing {
     )
     func updateSharedState(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
     func copySharedState(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
+    func streamDiagnostics(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
     func listStreams(withReply reply: @escaping (Data?, NSError?) -> Void)
 }
 
-final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
+final class Syphon26XPCControlService: NSObject {
     private let lock = NSLock()
     private var streams: [Syphon26StreamID: Syphon26XPCStreamDescription] = [:]
     private var slotDescriptorsByStream: [Syphon26StreamID: [Syphon26XPCIOSurfaceSlotDescriptor]] = [:]
@@ -193,14 +202,17 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
     private var sharedEventHandlesByStream: [Syphon26StreamID: MTLSharedEventHandle] = [:]
     private var sharedStatesByStream: [Syphon26StreamID: Syphon26SharedState] = [:]
     private var consumersByStream: [Syphon26StreamID: Set<String>] = [:]
+    private var producerOwners: [Syphon26StreamID: UUID] = [:]
+    private var consumerOwners: [Syphon26StreamID: [String: UUID]] = [:]
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
-    func registerProducer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+    func registerProducer(_ requestData: Data, ownerID: UUID, withReply reply: @escaping (Data?, NSError?) -> Void) {
         do {
             let request = try decoder.decode(Syphon26XPCProducerRegistrationRequest.self, from: requestData)
             lock.lock()
             streams[request.stream.streamID] = request.stream
+            producerOwners[request.stream.streamID] = ownerID
             consumersByStream[request.stream.streamID, default: []] = consumersByStream[request.stream.streamID, default: []]
             lock.unlock()
             try replyEncoded(Syphon26XPCProducerRegistrationResponse(stream: request.stream), reply: reply)
@@ -213,6 +225,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
         _ requestData: Data,
         surfaces surfaceArray: NSArray,
         sharedEventHandle: MTLSharedEventHandle?,
+        ownerID: UUID,
         withReply reply: @escaping (Data?, NSError?) -> Void
     ) {
         do {
@@ -235,6 +248,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             surfacesByStream[request.stream.streamID] = surfaces
             sharedEventHandlesByStream[request.stream.streamID] = sharedEventHandle
             sharedStatesByStream[request.stream.streamID] = Syphon26SharedState(description: request.stream.makeDescription())
+            producerOwners[request.stream.streamID] = ownerID
             consumersByStream[request.stream.streamID, default: []] = consumersByStream[request.stream.streamID, default: []]
             lock.unlock()
             try replyEncoded(
@@ -262,6 +276,8 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             sharedEventHandlesByStream.removeValue(forKey: request.streamID)
             sharedStatesByStream.removeValue(forKey: request.streamID)
             consumersByStream.removeValue(forKey: request.streamID)
+            producerOwners.removeValue(forKey: request.streamID)
+            consumerOwners.removeValue(forKey: request.streamID)
             lock.unlock()
             reply(Data(), nil)
         } catch {
@@ -269,7 +285,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
         }
     }
 
-    func registerConsumer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+    func registerConsumer(_ requestData: Data, ownerID: UUID, withReply reply: @escaping (Data?, NSError?) -> Void) {
         do {
             let request = try decoder.decode(Syphon26XPCConsumerRegistrationRequest.self, from: requestData)
             lock.lock()
@@ -280,6 +296,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             }
             let consumerID = UUID().uuidString
             consumersByStream[request.streamID, default: []].insert(consumerID)
+            consumerOwners[request.streamID, default: [:]][consumerID] = ownerID
             lock.unlock()
             try replyEncoded(
                 Syphon26XPCConsumerRegistrationResponse(consumerID: consumerID, stream: stream),
@@ -295,6 +312,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             let request = try decoder.decode(Syphon26XPCConsumerRetirementRequest.self, from: requestData)
             lock.lock()
             consumersByStream[request.streamID]?.remove(request.consumerID)
+            consumerOwners[request.streamID]?.removeValue(forKey: request.consumerID)
             lock.unlock()
             reply(Data(), nil)
         } catch {
@@ -381,6 +399,23 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
         }
     }
 
+    func streamDiagnostics(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        do {
+            let request = try decoder.decode(Syphon26XPCStreamDiagnosticsRequest.self, from: requestData)
+            lock.lock()
+            guard streams[request.streamID] != nil else {
+                lock.unlock()
+                reply(nil, nsError(Syphon26Error.streamNotFound))
+                return
+            }
+            let count = consumersByStream[request.streamID]?.count ?? 0
+            lock.unlock()
+            try replyEncoded(Syphon26XPCStreamDiagnosticsResponse(activeConsumerCount: count), reply: reply)
+        } catch {
+            reply(nil, nsError(Syphon26Error.invalidConfiguration))
+        }
+    }
+
     func listStreams(withReply reply: @escaping (Data?, NSError?) -> Void) {
         lock.lock()
         let response = Syphon26XPCListStreamsResponse(streams: streams.values.sorted { $0.name < $1.name })
@@ -412,6 +447,105 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
         }
         return surfaces
     }
+
+    func retireConnection(_ ownerID: UUID) {
+        lock.lock()
+        let retiredStreamIDs = producerOwners.compactMap { streamID, currentOwnerID in
+            currentOwnerID == ownerID ? streamID : nil
+        }
+        for streamID in retiredStreamIDs {
+            streams.removeValue(forKey: streamID)
+            slotDescriptorsByStream.removeValue(forKey: streamID)
+            surfacesByStream.removeValue(forKey: streamID)
+            sharedEventHandlesByStream.removeValue(forKey: streamID)
+            sharedStatesByStream.removeValue(forKey: streamID)
+            consumersByStream.removeValue(forKey: streamID)
+            producerOwners.removeValue(forKey: streamID)
+            consumerOwners.removeValue(forKey: streamID)
+        }
+        for (streamID, ownersByConsumer) in consumerOwners {
+            let staleConsumerIDs = ownersByConsumer.compactMap { consumerID, currentOwnerID in
+                currentOwnerID == ownerID ? consumerID : nil
+            }
+            for consumerID in staleConsumerIDs {
+                consumersByStream[streamID]?.remove(consumerID)
+                consumerOwners[streamID]?.removeValue(forKey: consumerID)
+            }
+        }
+        lock.unlock()
+    }
+}
+
+final class Syphon26XPCControlConnection: NSObject, Syphon26XPCControlServicing {
+    private let service: Syphon26XPCControlService
+    private let ownerID: UUID
+
+    init(service: Syphon26XPCControlService, ownerID: UUID) {
+        self.service = service
+        self.ownerID = ownerID
+        super.init()
+    }
+
+    func registerProducer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        service.registerProducer(requestData, ownerID: ownerID, withReply: reply)
+    }
+
+    func registerProducerTransport(
+        _ requestData: Data,
+        surfaces: NSArray,
+        sharedEventHandle: MTLSharedEventHandle?,
+        withReply reply: @escaping (Data?, NSError?) -> Void
+    ) {
+        service.registerProducerTransport(
+            requestData,
+            surfaces: surfaces,
+            sharedEventHandle: sharedEventHandle,
+            ownerID: ownerID,
+            withReply: reply
+        )
+    }
+
+    func retireProducer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        service.retireProducer(requestData, withReply: reply)
+    }
+
+    func registerConsumer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        service.registerConsumer(requestData, ownerID: ownerID, withReply: reply)
+    }
+
+    func retireConsumer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        service.retireConsumer(requestData, withReply: reply)
+    }
+
+    func copyIOSurfaceSlots(
+        _ requestData: Data,
+        withReply reply: @escaping (Data?, NSArray?, NSError?) -> Void
+    ) {
+        service.copyIOSurfaceSlots(requestData, withReply: reply)
+    }
+
+    func copySharedEventHandle(
+        _ requestData: Data,
+        withReply reply: @escaping (Data?, MTLSharedEventHandle?, NSError?) -> Void
+    ) {
+        service.copySharedEventHandle(requestData, withReply: reply)
+    }
+
+    func updateSharedState(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        service.updateSharedState(requestData, withReply: reply)
+    }
+
+    func copySharedState(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        service.copySharedState(requestData, withReply: reply)
+    }
+
+    func streamDiagnostics(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
+        service.streamDiagnostics(requestData, withReply: reply)
+    }
+
+    func listStreams(withReply reply: @escaping (Data?, NSError?) -> Void) {
+        service.listStreams(withReply: reply)
+    }
 }
 
 final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
@@ -439,8 +573,15 @@ final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
         let interface = Self.makeInterface()
+        let ownerID = UUID()
         newConnection.exportedInterface = interface
-        newConnection.exportedObject = service
+        newConnection.exportedObject = Syphon26XPCControlConnection(service: service, ownerID: ownerID)
+        newConnection.invalidationHandler = { [service] in
+            service.retireConnection(ownerID)
+        }
+        newConnection.interruptionHandler = { [service] in
+            service.retireConnection(ownerID)
+        }
         newConnection.resume()
         return true
     }
@@ -489,6 +630,10 @@ final class Syphon26XPCControlClient {
     }
 
     deinit {
+        connection.invalidate()
+    }
+
+    func invalidate() {
         connection.invalidate()
     }
 
@@ -592,6 +737,14 @@ final class Syphon26XPCControlClient {
             service.copySharedState(try encoder.encode(request), withReply: reply)
         }
         return try decoder.decode(Syphon26XPCSharedStateResponse.self, from: responseData).state
+    }
+
+    func activeConsumerCount(streamID: Syphon26StreamID) throws -> Int {
+        let request = Syphon26XPCStreamDiagnosticsRequest(streamID: streamID)
+        let responseData = try perform { service, reply in
+            service.streamDiagnostics(try encoder.encode(request), withReply: reply)
+        }
+        return try decoder.decode(Syphon26XPCStreamDiagnosticsResponse.self, from: responseData).activeConsumerCount
     }
 
     func retireConsumer(streamID: Syphon26StreamID, consumerID: String) throws {

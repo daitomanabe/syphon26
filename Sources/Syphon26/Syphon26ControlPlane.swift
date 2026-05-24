@@ -8,6 +8,10 @@ public final class Syphon26ControlPlane: @unchecked Sendable {
         self.client = Syphon26XPCControlClient(endpoint: endpoint)
     }
 
+    public func invalidate() {
+        client.invalidate()
+    }
+
     func registerProducer(
         description: Syphon26StreamDescription,
         resources: [Syphon26SlotResource],
@@ -60,5 +64,9 @@ public final class Syphon26ControlPlane: @unchecked Sendable {
 
     func listStreams() throws -> [Syphon26StreamDescription] {
         try client.listStreams()
+    }
+
+    func activeConsumerCount(streamID: Syphon26StreamID) throws -> Int {
+        try client.activeConsumerCount(streamID: streamID)
     }
 }

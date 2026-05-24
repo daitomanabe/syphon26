@@ -15,8 +15,8 @@ This is the ordered implementation queue after the native in-process transport M
 
 ## 2. Lifecycle cleanup and isolation
 
-- [ ] Add stale producer cleanup when an XPC connection invalidates.
-- [ ] Add stale consumer cleanup when an XPC connection invalidates.
+- [x] Add stale producer cleanup when an XPC connection invalidates.
+- [x] Add stale consumer cleanup when an XPC connection invalidates.
 - [ ] Add per-user isolation checks for the control-plane namespace.
 - [ ] Define temporary/shared-state ownership and permissions.
 - [ ] Add repeated create/destroy leak tests.
