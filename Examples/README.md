@@ -30,7 +30,7 @@ Run the UI pair:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_simple_ui_pair.sh
 ```
 
-Export double-clickable UI apps to `~/Desktop/Syphon26 Apps`:
+Export double-clickable UI apps into the local development tree at `dist/Syphon26 Apps`:
 
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/export_simple_ui_apps.sh

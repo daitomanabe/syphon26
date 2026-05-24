@@ -6,7 +6,7 @@ cd "$ROOT_DIR"
 
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
 
-DEST_DIR="${1:-$HOME/Desktop/Syphon26 Apps}"
+DEST_DIR="${1:-$ROOT_DIR/dist/Syphon26 Apps}"
 VERSION="${SYPHON26_APP_VERSION:-0.1.0}"
 
 SERVER_APP_NAME="Syphon26 Simple Server"
