@@ -32,6 +32,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
     private var serverDiagnostics: Syphon26DiagnosticsSnapshot
     private let sharedEvent: (any MTLSharedEvent)?
     private var sharedState: Syphon26SharedState
+    private let maximumProducerWaitNanoseconds: UInt64
 
     private(set) var description: Syphon26StreamDescription
 
@@ -39,6 +40,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         description: Syphon26StreamDescription,
         slots: [Syphon26SlotResource],
         diagnostics: Syphon26DiagnosticsSnapshot,
+        maximumProducerWaitNanoseconds: UInt64 = 0,
         sharedEvent: (any MTLSharedEvent)? = nil
     ) {
         self.description = description
@@ -57,30 +59,54 @@ final class Syphon26TransportStream: @unchecked Sendable {
         self.serverDiagnostics = diagnostics
         self.sharedEvent = sharedEvent
         self.sharedState = Syphon26SharedState(description: description)
+        self.maximumProducerWaitNanoseconds = maximumProducerWaitNanoseconds
     }
 
     func acquireDrawable() throws -> Syphon26ServerDrawable {
         Syphon26Signposts.acquire()
-        lock.lock()
-        guard !retired else {
-            lock.unlock()
-            throw Syphon26Error.streamRetired
-        }
-        guard let slotIndex = selectSlotIndexLocked() else {
-            lock.unlock()
-            throw Syphon26Error.noAvailableSlot
-        }
-        let drawableSequence = sequence + 1
-        let texture = slots[slotIndex].resource.texture
-        let streamDescription = description
-        lock.unlock()
+        let stallStart = Syphon26Clock.hostTimeNanoseconds()
+        var didWait = false
 
-        return Syphon26ServerDrawable(
-            texture: texture,
-            sequence: drawableSequence,
-            slotIndex: slotIndex,
-            streamDescription: streamDescription
-        )
+        while true {
+            lock.lock()
+            guard !retired else {
+                lock.unlock()
+                throw Syphon26Error.streamRetired
+            }
+            if let slotIndex = selectSlotIndexLocked() {
+                if didWait {
+                    serverDiagnostics.producerStallNanoseconds += Syphon26Clock.hostTimeNanoseconds() - stallStart
+                }
+                let drawableSequence = sequence + 1
+                let texture = slots[slotIndex].resource.texture
+                let streamDescription = description
+                lock.unlock()
+
+                return Syphon26ServerDrawable(
+                    texture: texture,
+                    sequence: drawableSequence,
+                    slotIndex: slotIndex,
+                    streamDescription: streamDescription
+                )
+            }
+
+            guard maximumProducerWaitNanoseconds > 0 else {
+                lock.unlock()
+                throw Syphon26Error.noAvailableSlot
+            }
+            let elapsed = Syphon26Clock.hostTimeNanoseconds() - stallStart
+            guard elapsed < maximumProducerWaitNanoseconds else {
+                serverDiagnostics.producerStallNanoseconds += elapsed
+                lock.unlock()
+                throw Syphon26Error.timeout
+            }
+            lock.unlock()
+
+            didWait = true
+            let remainingNanoseconds = maximumProducerWaitNanoseconds - elapsed
+            let sleepNanoseconds = min(remainingNanoseconds, 100_000)
+            Thread.sleep(forTimeInterval: Double(sleepNanoseconds) / 1_000_000_000.0)
+        }
     }
 
     func presentDrawable(
@@ -146,7 +172,8 @@ final class Syphon26TransportStream: @unchecked Sendable {
     func latestFrame(
         after lastSequence: Syphon26Sequence,
         clientID: UUID?,
-        waitDidEncode: (@Sendable () -> Void)? = nil
+        waitDidEncode: (@Sendable () -> Void)? = nil,
+        waitDidComplete: (@Sendable (UInt64) -> Void)? = nil
     ) throws -> Syphon26Frame? {
         lock.lock()
         guard !retired else {
@@ -175,7 +202,8 @@ final class Syphon26TransportStream: @unchecked Sendable {
             requiresGPUWait: sharedEvent != nil,
             sharedEvent: sharedEvent,
             sharedEventValue: slot.sequence,
-            waitDidEncode: waitDidEncode
+            waitDidEncode: waitDidEncode,
+            waitDidComplete: waitDidComplete
         )
     }
 

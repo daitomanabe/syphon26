@@ -74,6 +74,7 @@ public final class Syphon26Server: @unchecked Sendable {
             description: streamDescription,
             slots: textures,
             diagnostics: diagnostics,
+            maximumProducerWaitNanoseconds: configuration.maximumProducerWaitNanoseconds,
             sharedEvent: syncResolution.sharedEvent
         )
         Syphon26TransportRegistry.shared.register(stream)

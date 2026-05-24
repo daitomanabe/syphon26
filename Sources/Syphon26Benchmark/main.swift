@@ -150,10 +150,12 @@ struct BenchmarkManifest: Codable {
     var serverOverwrittenFrames: UInt64
     var serverCurrentConsumerLagFrames: UInt64
     var serverMaxConsumerLagFrames: UInt64
+    var serverProducerStallNanoseconds: UInt64
     var minClientFrames: UInt64
     var minClientFPS: Double
     var maxMissedFrames: UInt64
     var maxRepeatedReads: UInt64
+    var maxClientGPUWaitNanoseconds: UInt64
     var slowConsumerMilliseconds: Double
     var clientPollMicroseconds: Int
     var syncMode: String
@@ -269,6 +271,7 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
     let minClientFrames = clientDiagnostics.map(\.observedFrames).min() ?? 0
     let maxMissedFrames = clientDiagnostics.map(\.missedFrames).max() ?? 0
     let maxRepeatedReads = clientDiagnostics.map(\.repeatedReads).max() ?? 0
+    let maxClientGPUWaitNanoseconds = clientDiagnostics.map(\.gpuWaitNanoseconds).max() ?? 0
 
     return BenchmarkManifest(
         createdAt: ISO8601DateFormatter().string(from: Date()),
@@ -283,10 +286,12 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
         serverOverwrittenFrames: serverDiagnostics.overwrittenFrames,
         serverCurrentConsumerLagFrames: serverDiagnostics.currentConsumerLagFrames,
         serverMaxConsumerLagFrames: serverDiagnostics.maxConsumerLagFrames,
+        serverProducerStallNanoseconds: serverDiagnostics.producerStallNanoseconds,
         minClientFrames: minClientFrames,
         minClientFPS: Double(minClientFrames) / elapsed,
         maxMissedFrames: maxMissedFrames,
         maxRepeatedReads: maxRepeatedReads,
+        maxClientGPUWaitNanoseconds: maxClientGPUWaitNanoseconds,
         slowConsumerMilliseconds: options.slowConsumerMilliseconds,
         clientPollMicroseconds: options.clientPollMicroseconds,
         syncMode: serverDiagnostics.syncMode.rawValue,

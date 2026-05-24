@@ -14,6 +14,7 @@ public final class Syphon26Client: @unchecked Sendable {
     public private(set) var diagnostics: Syphon26DiagnosticsSnapshot
     private var transportStream: Syphon26TransportStream?
     private var clientRegistrationID: UUID?
+    private let diagnosticsLock = NSLock()
 
     public init(configuration: Syphon26ClientConfiguration) throws {
         if let streamDescription = configuration.streamDescription,
@@ -76,21 +77,35 @@ public final class Syphon26Client: @unchecked Sendable {
             after: lastPresentedSequence,
             clientID: clientRegistrationID,
             waitDidEncode: { [weak self] in
-                self?.diagnostics.sharedEventWaits += 1
+                self?.updateDiagnostics { diagnostics in
+                    diagnostics.sharedEventWaits += 1
+                }
+            },
+            waitDidComplete: { [weak self] elapsedNanoseconds in
+                self?.updateDiagnostics { diagnostics in
+                    diagnostics.gpuWaitNanoseconds += elapsedNanoseconds
+                }
             }
         ) else {
-            diagnostics.repeatedReads += 1
+            updateDiagnostics { diagnostics in
+                diagnostics.repeatedReads += 1
+            }
             hasNewFrame = false
             return nil
         }
         if lastPresentedSequence > 0, frame.sequence > lastPresentedSequence + 1 {
-            diagnostics.missedFrames += frame.sequence - lastPresentedSequence - 1
+            let missedFrames = frame.sequence - lastPresentedSequence - 1
+            updateDiagnostics { diagnostics in
+                diagnostics.missedFrames += missedFrames
+            }
         }
         lastPresentedSequence = frame.sequence
         latestSequence = frame.sequence
         hasNewFrame = false
-        diagnostics.observedFrames += 1
-        diagnostics.currentConsumerLagFrames = 0
+        updateDiagnostics { diagnostics in
+            diagnostics.observedFrames += 1
+            diagnostics.currentConsumerLagFrames = 0
+        }
         return frame
     }
 
@@ -107,15 +122,20 @@ public final class Syphon26Client: @unchecked Sendable {
     }
 
     public func diagnosticsSnapshot() -> Syphon26DiagnosticsSnapshot {
-        diagnostics
+        diagnosticsLock.lock()
+        let snapshot = diagnostics
+        diagnosticsLock.unlock()
+        return snapshot
     }
 
     public func resetDiagnostics() {
+        diagnosticsLock.lock()
         diagnostics = Syphon26DiagnosticsSnapshot(
             role: .client,
             streamID: streamID,
             syncMode: configuration.syncMode
         )
+        diagnosticsLock.unlock()
     }
 
     private func resolveStreamID() throws -> Syphon26StreamID {
@@ -129,5 +149,11 @@ public final class Syphon26Client: @unchecked Sendable {
             return firstStream.streamID
         }
         throw Syphon26Error.streamNotFound
+    }
+
+    private func updateDiagnostics(_ body: (inout Syphon26DiagnosticsSnapshot) -> Void) {
+        diagnosticsLock.lock()
+        body(&diagnostics)
+        diagnosticsLock.unlock()
     }
 }

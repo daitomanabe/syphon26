@@ -322,6 +322,53 @@ func boundedLatencyReportsNoSlotWhenAllSlotsAreBusy() throws {
 }
 
 @Test
+func boundedLatencyMeasuresProducerStallUntilSlotIsReusable() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Producer Stall Stream",
+            device: device,
+            width: 64,
+            height: 64,
+            slotCount: 2,
+            deliveryMode: .boundedLatency,
+            maximumProducerWaitNanoseconds: 50_000_000
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+    defer { client.stop() }
+
+    func publishOne() throws {
+        let drawable = try server.acquireDrawable()
+        let commandBuffer = try #require(queue.makeCommandBuffer())
+        try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+    }
+
+    try publishOne()
+    try publishOne()
+
+    let group = DispatchGroup()
+    group.enter()
+    DispatchQueue.global(qos: .userInitiated).async {
+        Thread.sleep(forTimeInterval: 0.005)
+        _ = try? client.copyLatestFrame()
+        group.leave()
+    }
+
+    _ = try server.acquireDrawable()
+    group.wait()
+
+    #expect(server.diagnosticsSnapshot().producerStallNanoseconds > 0)
+}
+
+@Test
 func clientReadsFailAfterProducerRetires() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let server = try Syphon26Server(
@@ -497,6 +544,7 @@ func sharedEventFrameCanEncodeConsumerWait() throws {
     consumerCommandBuffer.waitUntilCompleted()
     #expect(consumerCommandBuffer.status == .completed)
     #expect(client.diagnosticsSnapshot().sharedEventWaits == 1)
+    #expect(client.diagnosticsSnapshot().gpuWaitNanoseconds > 0)
 }
 
 @Test

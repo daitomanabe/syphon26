@@ -68,8 +68,8 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Wait on frame readiness from the consumer command buffer when needed.
 - [x] Add atomic sequence polling fallback.
 - [x] Expose sync fallback reason in diagnostics.
-- [ ] Measure GPU wait time.
-- [ ] Measure producer stall time.
+- [x] Measure GPU wait time.
+- [x] Measure producer stall time.
 - [x] Test producer shutdown while clients are waiting.
 - [x] Test client shutdown while producer command buffers are in flight.
 
