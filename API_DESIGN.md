@@ -411,6 +411,20 @@ APIs:
 
 Stream change handlers must be coalesced and must not be tied to the frame hot path.
 
+## Native Control Plane
+
+Phase 1 uses an internal XPC control channel for stream metadata and lifecycle registration. The frame hot path remains Metal/IOSurface-based; XPC is control-plane only.
+
+Internal messages:
+
+- producer registration
+- producer retirement
+- consumer registration
+- consumer retirement
+- stream list query
+
+The current control-plane payload exchanges typed stream metadata. IOSurface and `MTLSharedEventHandle` handoff are the next private payloads and should not become public API unless an advanced use case requires them.
+
 ## `Syphon26DiagnosticsSnapshot`
 
 Shared diagnostics shape for server and client.

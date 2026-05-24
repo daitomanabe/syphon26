@@ -52,12 +52,12 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Control Plane
 
-- [ ] Add an XPC-based control channel.
-- [ ] Exchange stream metadata over XPC.
+- [x] Add an XPC-based control channel.
+- [x] Exchange stream metadata over XPC.
 - [ ] Exchange IOSurface references or secure IOSurface handles over XPC.
 - [ ] Exchange `MTLSharedEventHandle` over XPC.
-- [ ] Add producer registration and retirement.
-- [ ] Add consumer registration and retirement.
+- [x] Add producer registration and retirement.
+- [x] Add consumer registration and retirement.
 - [ ] Add stale process cleanup.
 - [ ] Add per-user isolation for any shared memory or temporary state.
 

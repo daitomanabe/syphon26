@@ -54,6 +54,68 @@ func serverExposesResolvedTransportCapabilities() throws {
 }
 
 @Test
+func xpcControlChannelRegistersConsumersAndRetiresStreams() throws {
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+
+    let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
+    let description = Syphon26StreamDescription(
+        streamID: "xpc-stream",
+        name: "XPC Stream",
+        appName: "Tests",
+        processIdentifier: ProcessInfo.processInfo.processIdentifier,
+        width: 128,
+        height: 64,
+        pixelFormat: .rgba16Float,
+        colorPrimaries: .displayP3,
+        transferFunction: .linear,
+        alphaMode: .premultiplied,
+        slotCount: 4,
+        syncMode: .sharedEvent,
+        deliveryMode: .latest,
+        transportCapabilities: Syphon26TransportCapabilities(
+            syncMode: .sharedEvent,
+            pixelFormat: .rgba16Float,
+            colorPrimaries: .displayP3,
+            transferFunction: .linear,
+            alphaMode: .premultiplied,
+            ringSlotCount: 4,
+            fallbackReason: .none
+        ),
+        capabilities: ["metal", "iosurface", "shared-event", "rgba16f"]
+    )
+
+    let registered = try client.registerProducer(description)
+    #expect(registered.streamID == description.streamID)
+    #expect(registered.pixelFormat == .rgba16Float)
+    #expect(registered.transportCapabilities.ringSlotCount == 4)
+
+    let streams = try client.listStreams()
+    #expect(streams.map(\.streamID) == ["xpc-stream"])
+
+    let consumer = try client.registerConsumer(streamID: description.streamID)
+    #expect(!consumer.consumerID.isEmpty)
+    #expect(consumer.stream.streamID == description.streamID)
+
+    try client.retireConsumer(streamID: description.streamID, consumerID: consumer.consumerID)
+    try client.retireProducer(streamID: description.streamID)
+    #expect(try client.listStreams().isEmpty)
+}
+
+@Test
+func xpcControlChannelRejectsMissingConsumerStream() throws {
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+
+    let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
+    #expect(throws: Syphon26Error.streamNotFound) {
+        _ = try client.registerConsumer(streamID: "missing")
+    }
+}
+
+@Test
 func directorySeesRunningServer() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Directory Stream", device: device, width: 64, height: 64)
