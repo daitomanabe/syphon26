@@ -27,13 +27,20 @@ final class Syphon26TransportStream: @unchecked Sendable {
     private var sequence: Syphon26Sequence = 0
     private var activeClients: Set<UUID> = []
     private var serverDiagnostics: Syphon26DiagnosticsSnapshot
+    private let sharedEvent: (any MTLSharedEvent)?
 
     private(set) var description: Syphon26StreamDescription
 
-    init(description: Syphon26StreamDescription, slots: [Syphon26SlotResource], diagnostics: Syphon26DiagnosticsSnapshot) {
+    init(
+        description: Syphon26StreamDescription,
+        slots: [Syphon26SlotResource],
+        diagnostics: Syphon26DiagnosticsSnapshot,
+        sharedEvent: (any MTLSharedEvent)? = nil
+    ) {
         self.description = description
         self.slots = slots.map { Slot(resource: $0) }
         self.serverDiagnostics = diagnostics
+        self.sharedEvent = sharedEvent
     }
 
     func acquireDrawable() throws -> Syphon26ServerDrawable {
@@ -61,6 +68,13 @@ final class Syphon26TransportStream: @unchecked Sendable {
     ) throws {
         guard drawable.slotIndex >= 0 && drawable.slotIndex < slots.count else {
             throw Syphon26Error.internalInconsistency
+        }
+
+        if let sharedEvent {
+            commandBuffer.encodeSignalEvent(sharedEvent, value: drawable.sequence)
+            lock.lock()
+            serverDiagnostics.sharedEventSignals += 1
+            lock.unlock()
         }
 
         commandBuffer.addCompletedHandler { [weak self] _ in

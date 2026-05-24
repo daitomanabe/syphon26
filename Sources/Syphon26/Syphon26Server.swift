@@ -53,11 +53,17 @@ public final class Syphon26Server: @unchecked Sendable {
         if isRunning {
             return
         }
+        let syncResolution = try Self.resolveSyncMode(configuration: configuration)
+        streamDescription.syncMode = syncResolution.syncMode
+        diagnostics.syncMode = syncResolution.syncMode
+        diagnostics.fallbackReason = syncResolution.fallbackReason
+
         let textures = try Self.makeSlotResources(configuration: configuration)
         let stream = Syphon26TransportStream(
             description: streamDescription,
             slots: textures,
-            diagnostics: diagnostics
+            diagnostics: diagnostics,
+            sharedEvent: syncResolution.sharedEvent
         )
         Syphon26TransportRegistry.shared.register(stream)
         transportStream = stream
@@ -171,5 +177,24 @@ public final class Syphon26Server: @unchecked Sendable {
             throw Syphon26Error.transportUnavailable
         }
         return Syphon26SlotResource(texture: texture, surface: surface)
+    }
+
+    private static func resolveSyncMode(configuration: Syphon26ServerConfiguration) throws -> (
+        syncMode: Syphon26SyncMode,
+        fallbackReason: Syphon26FallbackReason,
+        sharedEvent: (any MTLSharedEvent)?
+    ) {
+        switch configuration.syncMode {
+        case .sequencePolling:
+            return (.sequencePolling, .none, nil)
+        case .automatic, .sharedEvent:
+            if let sharedEvent = configuration.device.makeSharedEvent() {
+                return (.sharedEvent, .none, sharedEvent)
+            }
+            if configuration.syncMode == .sharedEvent, !configuration.allowsFallbacks {
+                throw Syphon26Error.sharedEventUnavailable
+            }
+            return (.sequencePolling, .sharedEventUnavailable, nil)
+        }
     }
 }

@@ -63,11 +63,11 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## GPU Synchronization
 
-- [ ] Use `MTLSharedEvent` when available.
-- [ ] Signal frame readiness from the producer command buffer.
+- [x] Use `MTLSharedEvent` when available.
+- [x] Signal frame readiness from the producer command buffer.
 - [ ] Wait on frame readiness from the consumer command buffer when needed.
-- [ ] Add atomic sequence polling fallback.
-- [ ] Expose sync fallback reason in diagnostics.
+- [x] Add atomic sequence polling fallback.
+- [x] Expose sync fallback reason in diagnostics.
 - [ ] Measure GPU wait time.
 - [ ] Measure producer stall time.
 - [ ] Test producer shutdown while clients are waiting.

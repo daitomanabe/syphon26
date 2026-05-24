@@ -152,3 +152,52 @@ func clientStartFailsWhenStreamIsMissing() throws {
         try client.start()
     }
 }
+
+@Test
+func automaticSyncReportsResolvedMode() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Sync Stream",
+            device: device,
+            width: 64,
+            height: 64,
+            syncMode: .automatic
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    #expect([Syphon26SyncMode.sharedEvent, .sequencePolling].contains(server.streamDescription.syncMode))
+    if server.streamDescription.syncMode == .sequencePolling {
+        #expect(server.diagnosticsSnapshot().fallbackReason != .none)
+    }
+}
+
+@Test
+func sharedEventSignalIsCountedWhenAvailable() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Shared Event Stream",
+            device: device,
+            width: 64,
+            height: 64,
+            syncMode: .automatic
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let drawable = try server.acquireDrawable()
+    let commandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+
+    let diagnostics = server.diagnosticsSnapshot()
+    if diagnostics.syncMode == .sharedEvent {
+        #expect(diagnostics.sharedEventSignals == 1)
+    }
+}
