@@ -13,6 +13,8 @@ struct BenchmarkOptions {
     var name = "Syphon26Benchmark"
     var syncMode = Syphon26SyncMode.sequencePolling
     var renderMode = RenderMode.clear
+    var slowConsumerMilliseconds = 0.0
+    var clientPollMicroseconds = 0
 
     static func parse(_ arguments: [String]) throws -> BenchmarkOptions {
         var options = BenchmarkOptions()
@@ -48,6 +50,10 @@ struct BenchmarkOptions {
                 options.syncMode = try parseSyncMode(value())
             case "--render":
                 options.renderMode = try parseRenderMode(value())
+            case "--slow-consumer-ms":
+                options.slowConsumerMilliseconds = try Double(value()) ?? options.slowConsumerMilliseconds
+            case "--client-poll-us":
+                options.clientPollMicroseconds = try Int(value()) ?? options.clientPollMicroseconds
             case "--help", "-h":
                 printHelpAndExit()
             default:
@@ -116,6 +122,8 @@ struct BenchmarkManifest: Codable {
     var minClientFPS: Double
     var maxMissedFrames: UInt64
     var maxRepeatedReads: UInt64
+    var slowConsumerMilliseconds: Double
+    var clientPollMicroseconds: Int
     var syncMode: String
     var fallbackReason: String
 }
@@ -133,6 +141,8 @@ func printHelpAndExit() -> Never {
       --clients <count>      Default: 1
       --sync <mode>          sequence-polling, shared-event, automatic. Default: sequence-polling
       --render <mode>        clear or none. Default: clear
+      --slow-consumer-ms <n> Sleep after each observed client frame. Default: 0
+      --client-poll-us <n>   Sleep after empty client polls. Default: 0
       --output <directory>   Default: benchmark-results
       --name <stream name>   Default: Syphon26Benchmark
     """)
@@ -188,13 +198,35 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
 
     let start = hostSeconds()
     let end = start + options.durationSeconds
+    let errorBox = BenchmarkErrorBox()
+    let group = DispatchGroup()
+    for client in clients {
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            defer { group.leave() }
+            while hostSeconds() < end {
+                do {
+                    if try client.copyLatestFrame() != nil {
+                        sleepMilliseconds(options.slowConsumerMilliseconds)
+                    } else {
+                        sleepMicroseconds(options.clientPollMicroseconds)
+                    }
+                } catch {
+                    errorBox.record(error)
+                    return
+                }
+            }
+        }
+    }
+
     var measuredPacer = FramePacer(fps: options.fps)
     while hostSeconds() < end {
         try publishOneFrame(server: server, queue: queue, renderMode: options.renderMode)
-        for client in clients {
-            _ = try client.copyLatestFrame()
-        }
         measuredPacer.waitIfNeeded()
+    }
+    group.wait()
+    if let error = errorBox.error {
+        throw error
     }
     let elapsed = max(hostSeconds() - start, 0.000001)
 
@@ -218,9 +250,45 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
         minClientFPS: Double(minClientFrames) / elapsed,
         maxMissedFrames: maxMissedFrames,
         maxRepeatedReads: maxRepeatedReads,
+        slowConsumerMilliseconds: options.slowConsumerMilliseconds,
+        clientPollMicroseconds: options.clientPollMicroseconds,
         syncMode: serverDiagnostics.syncMode.rawValue,
         fallbackReason: serverDiagnostics.fallbackReason.rawValue
     )
+}
+
+final class BenchmarkErrorBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedError: (any Error)?
+
+    var error: (any Error)? {
+        lock.lock()
+        let error = storedError
+        lock.unlock()
+        return error
+    }
+
+    func record(_ error: any Error) {
+        lock.lock()
+        if storedError == nil {
+            storedError = error
+        }
+        lock.unlock()
+    }
+}
+
+func sleepMilliseconds(_ milliseconds: Double) {
+    guard milliseconds > 0 else {
+        return
+    }
+    Thread.sleep(forTimeInterval: milliseconds / 1000.0)
+}
+
+func sleepMicroseconds(_ microseconds: Int) {
+    guard microseconds > 0 else {
+        return
+    }
+    usleep(useconds_t(microseconds))
 }
 
 func publishOneFrame(server: Syphon26Server, queue: any MTLCommandQueue, renderMode: RenderMode) throws {
