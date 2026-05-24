@@ -48,7 +48,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Support configurable slot count.
 - [x] Implement latest-frame consumption semantics.
 - [x] Track slow consumers without blocking the producer.
-- [ ] Add all-slots-busy policy for latest-frame mode.
+- [x] Add all-slots-busy policy for latest-frame mode.
 
 ## Control Plane
 

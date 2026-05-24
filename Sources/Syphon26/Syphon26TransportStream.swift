@@ -61,8 +61,10 @@ final class Syphon26TransportStream: @unchecked Sendable {
     func acquireDrawable() throws -> Syphon26ServerDrawable {
         Syphon26Signposts.acquire()
         lock.lock()
-        let slotIndex = nextSlotIndex
-        nextSlotIndex = (nextSlotIndex + 1) % slots.count
+        guard let slotIndex = selectSlotIndexLocked() else {
+            lock.unlock()
+            throw Syphon26Error.noAvailableSlot
+        }
         let drawableSequence = sequence + 1
         let texture = slots[slotIndex].resource.texture
         let streamDescription = description
@@ -233,6 +235,32 @@ final class Syphon26TransportStream: @unchecked Sendable {
         serverDiagnostics.activeClientCount = activeClients.count
         updateConsumerLagLocked()
         lock.unlock()
+    }
+
+    private func selectSlotIndexLocked() -> Int? {
+        let startIndex = nextSlotIndex
+        for offset in 0..<slots.count {
+            let candidate = (startIndex + offset) % slots.count
+            if isSlotReusableLocked(candidate) {
+                nextSlotIndex = (candidate + 1) % slots.count
+                return candidate
+            }
+        }
+
+        guard description.deliveryMode == .latest else {
+            return nil
+        }
+        let overwriteIndex = nextSlotIndex
+        nextSlotIndex = (nextSlotIndex + 1) % slots.count
+        return overwriteIndex
+    }
+
+    private func isSlotReusableLocked(_ slotIndex: Int) -> Bool {
+        let slotSequence = slots[slotIndex].sequence
+        guard slotSequence > 0, !activeClientSequences.isEmpty else {
+            return true
+        }
+        return !activeClientSequences.values.contains { $0 < slotSequence }
     }
 
     private func updateConsumerLagLocked() {

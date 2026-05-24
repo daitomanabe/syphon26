@@ -254,6 +254,43 @@ func serverDiagnosticsTrackOverwrittenFramesAndConsumerLag() throws {
 }
 
 @Test
+func boundedLatencyReportsNoSlotWhenAllSlotsAreBusy() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Busy Slot Stream",
+            device: device,
+            width: 64,
+            height: 64,
+            slotCount: 2,
+            deliveryMode: .boundedLatency
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+    defer { client.stop() }
+
+    func publishOne() throws {
+        let drawable = try server.acquireDrawable()
+        let commandBuffer = try #require(queue.makeCommandBuffer())
+        try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+    }
+
+    try publishOne()
+    try publishOne()
+
+    #expect(throws: Syphon26Error.noAvailableSlot) {
+        _ = try server.acquireDrawable()
+    }
+}
+
+@Test
 func clientStartFailsWhenStreamIsMissing() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let client = try Syphon26Client(configuration: Syphon26ClientConfiguration(device: device, streamID: "missing-stream"))
