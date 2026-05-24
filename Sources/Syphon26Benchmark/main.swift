@@ -172,12 +172,13 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
     defer { clients.forEach { $0.stop() } }
 
     let warmupEnd = hostSeconds() + options.warmupSeconds
+    var warmupPacer = FramePacer(fps: options.fps)
     while hostSeconds() < warmupEnd {
         try publishOneFrame(server: server, queue: queue, renderMode: options.renderMode)
         for client in clients {
             _ = try client.copyLatestFrame()
         }
-        throttleIfNeeded(fps: options.fps)
+        warmupPacer.waitIfNeeded()
     }
 
     server.resetDiagnostics()
@@ -187,12 +188,13 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
 
     let start = hostSeconds()
     let end = start + options.durationSeconds
+    var measuredPacer = FramePacer(fps: options.fps)
     while hostSeconds() < end {
         try publishOneFrame(server: server, queue: queue, renderMode: options.renderMode)
         for client in clients {
             _ = try client.copyLatestFrame()
         }
-        throttleIfNeeded(fps: options.fps)
+        measuredPacer.waitIfNeeded()
     }
     let elapsed = max(hostSeconds() - start, 0.000001)
 
@@ -250,11 +252,32 @@ func encodeClear(into texture: any MTLTexture, commandBuffer: any MTLCommandBuff
     encoder.endEncoding()
 }
 
-func throttleIfNeeded(fps: Double) {
-    guard fps > 0 else {
-        return
+struct FramePacer {
+    private let interval: Double?
+    private var nextDeadline: Double
+
+    init(fps: Double) {
+        if fps > 0 {
+            self.interval = 1.0 / fps
+            self.nextDeadline = hostSeconds()
+        } else {
+            self.interval = nil
+            self.nextDeadline = 0
+        }
     }
-    Thread.sleep(forTimeInterval: 1.0 / fps)
+
+    mutating func waitIfNeeded() {
+        guard let interval else {
+            return
+        }
+        nextDeadline += interval
+        let now = hostSeconds()
+        if nextDeadline > now {
+            Thread.sleep(forTimeInterval: nextDeadline - now)
+        } else {
+            nextDeadline = now
+        }
+    }
 }
 
 func writeManifest(_ manifest: BenchmarkManifest, outputDirectory: String) throws {
