@@ -1,0 +1,38 @@
+{
+  "consumerFPS": 60.00055555555556,
+  "consumerLastSequence": 108001,
+  "consumerObservedFrames": 108001,
+  "consumerRepeatedReads": 1217425,
+  "consumerResources": {
+    "fdDelta": 0,
+    "fdEnd": 11,
+    "fdMax": 11,
+    "fdStart": 11,
+    "rssDeltaKB": 1776,
+    "rssEndKB": 13856,
+    "rssMaxKB": 13856,
+    "rssStartKB": 12080
+  },
+  "consumerReturnCode": 0,
+  "durationSeconds": 1800,
+  "fpsTarget": 60,
+  "height": 1080,
+  "matrix": "1080p60-30m",
+  "passed": true,
+  "pixelFormat": "bgra8",
+  "producerFrames": 108060,
+  "producerPublishedFrames": 108060,
+  "producerResources": {
+    "fdDelta": 0,
+    "fdEnd": 15,
+    "fdMax": 15,
+    "fdStart": 15,
+    "rssDeltaKB": -16,
+    "rssEndKB": 17152,
+    "rssMaxKB": 17168,
+    "rssStartKB": 17168
+  },
+  "producerReturnCode": 0,
+  "resourceStable": true,
+  "width": 1920
+}

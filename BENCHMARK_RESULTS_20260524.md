@@ -114,8 +114,7 @@ Passed in this checkpoint:
 
 Still required before release-quality benchmark claims:
 
-- Long-duration 30 minute stability runs.
-- Memory growth and handle leak checks.
+- No remaining Phase 1 benchmark gate is open in `REMAINING_IMPLEMENTATION_TODO.md`.
 
 ## App-To-App Production Checkpoint
 
@@ -129,3 +128,15 @@ The app-to-app benchmark report is published in `benchmark-reports/app-to-app-pr
 | 3840x2160 max BGRA8 | 343.62 | 666.80 | 1.94x |
 
 These values use a launchd-managed Syphon26 control plane and separate producer/consumer processes. The same-session classic Syphon comparison was rerun from the sibling Syphon-Framework benchmark app.
+
+## App-To-App Stability
+
+The long stability report is published in `benchmark-reports/stability-production-20260524/`.
+
+| Test | Duration | Consumer FPS | Producer RSS Delta | Consumer RSS Delta | Producer FD Delta | Consumer FD Delta | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1920x1080@60 BGRA8 | 30 min | 60.0006 | -16 KB | +1776 KB | 0 | 0 | pass |
+| 3840x2160@60 BGRA8 | 30 min | 60.0006 | -16 KB | +1760 KB | 0 | 0 | pass |
+| 1920x1080 max BGRA8 | 10 min | 783.8517 | +224 KB | +1744 KB | 0 | 0 | pass |
+
+These runs use the launchd-managed Syphon26 control plane and separate producer/consumer processes. RSS and file-descriptor counts were sampled every 15 seconds.

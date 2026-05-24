@@ -6,11 +6,11 @@ This is the ordered implementation queue after the native in-process transport M
 
 - [x] Add a repeatable app-to-app stability runner that records producer/consumer FPS, RSS memory, and file-descriptor counts.
 - [x] Smoke-test the stability runner with short 1080p60 and max-throughput runs.
-- [ ] Run and publish a 30 minute 1080p60 BGRA8 app-to-app stability result.
-- [ ] Run and publish a 30 minute 4K60 BGRA8 app-to-app stability result.
-- [ ] Run and publish a 10 minute 1080p max-throughput BGRA8 app-to-app stability result.
-- [ ] Summarize memory growth and handle-count deltas from the stability runs.
-- [ ] Update `VALIDATION_BENCHMARK_PLAN.md` release gates from the measured results.
+- [x] Run and publish a 30 minute 1080p60 BGRA8 app-to-app stability result.
+- [x] Run and publish a 30 minute 4K60 BGRA8 app-to-app stability result.
+- [x] Run and publish a 10 minute 1080p max-throughput BGRA8 app-to-app stability result.
+- [x] Summarize memory growth and handle-count deltas from the stability runs.
+- [x] Update `VALIDATION_BENCHMARK_PLAN.md` release gates from the measured results.
 
 ## 1. Cross-process transport handoff
 
@@ -55,10 +55,10 @@ This is the ordered implementation queue after the native in-process transport M
 - [x] Run classic Syphon matrix on the same machine in the same benchmark session.
 - [x] Publish JSON, CSV, environment metadata, and trace samples.
 - [x] Produce speedup tables for fixed-FPS and max-throughput modes.
-- [ ] Run 30 minute 1080p60 stability test.
-- [ ] Run 30 minute 4K60 stability test.
-- [ ] Run 10 minute max-throughput stability test.
-- [ ] Run memory growth and handle leak checks.
+- [x] Run 30 minute 1080p60 stability test.
+- [x] Run 30 minute 4K60 stability test.
+- [x] Run 10 minute max-throughput stability test.
+- [x] Run memory growth and handle leak checks.
 
 ## 6. Deferred format work
 

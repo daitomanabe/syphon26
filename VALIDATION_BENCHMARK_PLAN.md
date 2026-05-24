@@ -6,48 +6,48 @@ This plan defines how Syphon26 development is validated and how performance is c
 
 ### Phase 0: API Lock
 
-- [ ] Review `API_DESIGN.md`.
-- [ ] Freeze Phase 1 public type names.
-- [ ] Freeze Phase 1 initializer and frame acquisition semantics.
+- [x] Review `API_DESIGN.md`.
+- [x] Freeze Phase 1 public type names.
+- [x] Freeze Phase 1 initializer and frame acquisition semantics.
 - [x] Mark all bridge-related APIs out of scope.
 - [x] Add compile-only Objective-C and Swift API usage examples.
 
 ### Phase 1: Sequence-Poll Transport
 
-- [ ] Implement shared stream state.
-- [ ] Implement IOSurface-backed ring slots.
-- [ ] Implement `Syphon26Server` direct render path.
-- [ ] Implement `Syphon26Client` latest-frame acquisition.
-- [ ] Implement atomic sequence polling sync.
-- [ ] Implement diagnostics snapshots.
-- [ ] Validate 1080p60 BGRA8 with one client.
+- [x] Implement shared stream state.
+- [x] Implement IOSurface-backed ring slots.
+- [x] Implement `Syphon26Server` direct render path.
+- [x] Implement `Syphon26Client` latest-frame acquisition.
+- [x] Implement atomic sequence polling sync.
+- [x] Implement diagnostics snapshots.
+- [x] Validate 1080p60 BGRA8 with one client.
 
 ### Phase 2: XPC Control Plane
 
-- [ ] Add stream registration.
-- [ ] Add stream retirement.
-- [ ] Add client registration.
-- [ ] Add client retirement.
-- [ ] Move IOSurface handoff to XPC.
-- [ ] Add stale process cleanup.
-- [ ] Validate producer crash cleanup.
-- [ ] Validate consumer crash cleanup.
+- [x] Add stream registration.
+- [x] Add stream retirement.
+- [x] Add client registration.
+- [x] Add client retirement.
+- [x] Move IOSurface handoff to XPC.
+- [x] Add stale process cleanup.
+- [x] Validate producer crash cleanup.
+- [x] Validate consumer crash cleanup.
 
 ### Phase 3: `MTLSharedEvent` Sync
 
-- [ ] Exchange `MTLSharedEventHandle` over XPC.
-- [ ] Signal readiness from the producer command buffer.
-- [ ] Encode client waits on consumer command buffers.
-- [ ] Preserve sequence polling fallback.
-- [ ] Record fallback reason when shared events are unavailable.
-- [ ] Validate shared-event and fallback modes with the same benchmark matrix.
+- [x] Exchange `MTLSharedEventHandle` over XPC.
+- [x] Signal readiness from the producer command buffer.
+- [x] Encode client waits on consumer command buffers.
+- [x] Preserve sequence polling fallback.
+- [x] Record fallback reason when shared events are unavailable.
+- [x] Validate shared-event and fallback modes with the same benchmark matrix.
 
 ### Phase 4: Format Expansion
 
-- [ ] Add RGBA16F.
-- [ ] Validate color metadata propagation.
-- [ ] Validate alpha metadata propagation.
-- [ ] Add unsupported-format rejection tests.
+- [x] Add RGBA16F.
+- [x] Validate color metadata propagation.
+- [x] Validate alpha metadata propagation.
+- [x] Add unsupported-format rejection tests.
 
 ### Phase 5: Release Candidate Benchmarks
 
@@ -55,72 +55,81 @@ This plan defines how Syphon26 development is validated and how performance is c
 - [x] Run classic Syphon matrix on the same machine.
 - [x] Publish JSON, CSV, environment metadata, and trace samples.
 - [x] Produce speedup tables.
-- [ ] Verify no CPU readback in fast-path samples.
+- [x] Verify no CPU readback in fast-path samples.
 
 ## Validation Checklist
 
 ### API Validation
 
-- [ ] Objective-C import of `Syphon26.h`.
-- [ ] Swift import of module.
-- [ ] Server create/start/stop/invalidate.
-- [ ] Client create/start/stop/invalidate.
-- [ ] Idempotent lifecycle calls.
-- [ ] Invalid configuration failure paths.
-- [ ] Unsupported pixel format failure paths.
+- [x] Objective-C import of `Syphon26.h`.
+- [x] Swift import of module.
+- [x] Server create/start/stop/invalidate.
+- [x] Client create/start/stop/invalidate.
+- [x] Idempotent lifecycle calls.
+- [x] Invalid configuration failure paths.
+- [x] Unsupported pixel format failure paths.
 - [ ] Stream description update after resize.
-- [ ] Diagnostics snapshot before start, during run, after stop.
+- [x] Diagnostics snapshot before start, during run, after stop.
 
 ### Transport Validation
 
-- [ ] One producer, one consumer.
-- [ ] One producer, 2 consumers.
-- [ ] One producer, 4 consumers.
-- [ ] One producer, 8 consumers.
-- [ ] One producer, 16 consumers.
-- [ ] No-consumer publishing.
-- [ ] Consumer starts before producer.
-- [ ] Consumer starts after producer.
-- [ ] Producer stops while consumers are active.
-- [ ] Consumer stops while producer is active.
-- [ ] Producer crash cleanup.
-- [ ] Consumer crash cleanup.
+- [x] One producer, one consumer.
+- [x] One producer, 2 consumers.
+- [x] One producer, 4 consumers.
+- [x] One producer, 8 consumers.
+- [x] One producer, 16 consumers.
+- [x] No-consumer publishing.
+- [x] Consumer starts before producer.
+- [x] Consumer starts after producer.
+- [x] Producer stops while consumers are active.
+- [x] Consumer stops while producer is active.
+- [x] Producer crash cleanup.
+- [x] Consumer crash cleanup.
 - [ ] Stream resize while consumers are active.
 
 ### Frame Correctness
 
-- [ ] Monotonic sequence numbers.
-- [ ] Correct dimensions.
-- [ ] Correct pixel format.
-- [ ] Correct color metadata.
-- [ ] Correct timestamp propagation.
+- [x] Monotonic sequence numbers.
+- [x] Correct dimensions.
+- [x] Correct pixel format.
+- [x] Correct color metadata.
+- [x] Correct timestamp propagation.
 - [ ] No stale frame after resize.
-- [ ] No CPU readback in publish path.
-- [ ] No CPU readback in client acquisition path.
+- [x] No CPU readback in publish path.
+- [x] No CPU readback in client acquisition path.
 
 ### Synchronization Validation
 
-- [ ] Sequence polling mode.
-- [ ] Shared-event mode.
-- [ ] Automatic mode choosing shared event when available.
-- [ ] Automatic mode falling back to sequence polling when needed.
+- [x] Sequence polling mode.
+- [x] Shared-event mode.
+- [x] Automatic mode choosing shared event when available.
+- [x] Automatic mode falling back to sequence polling when needed.
 - [ ] Shared-event timeout accounting.
-- [ ] Producer stall accounting.
-- [ ] Client GPU wait accounting.
+- [x] Producer stall accounting.
+- [x] Client GPU wait accounting.
 - [ ] Slot not reused before consumer GPU work completes.
 
 ### Stress Validation
 
-- [ ] 30 minute 1080p60 run.
-- [ ] 30 minute 4K60 run.
-- [ ] 10 minute max-throughput run.
-- [ ] Slow consumer at 1 ms per frame.
-- [ ] Slow consumer at 5 ms per frame.
-- [ ] Slow consumer at 16 ms per frame.
-- [ ] Repeated stream create/destroy loop.
-- [ ] Repeated client attach/detach loop.
-- [ ] Memory growth check.
-- [ ] Handle leak check.
+- [x] 30 minute 1080p60 run.
+- [x] 30 minute 4K60 run.
+- [x] 10 minute max-throughput run.
+- [x] Slow consumer at 1 ms per frame.
+- [x] Slow consumer at 5 ms per frame.
+- [x] Slow consumer at 16 ms per frame.
+- [x] Repeated stream create/destroy loop.
+- [x] Repeated client attach/detach loop.
+- [x] Memory growth check.
+- [x] Handle leak check.
+
+## Open Non-Gate Items
+
+These items remain intentionally unchecked because they are outside the current Phase 1 benchmark release gate or need a dedicated future harness:
+
+- Stream resize/reconfiguration validation. The current native transport preview uses immutable stream descriptions.
+- Shared-event timeout accounting. Shared-event readiness and GPU wait accounting are validated, but forced timeout simulation is not yet part of the harness.
+- Strict cross-process slot reuse after consumer GPU completion. Phase 1 app-to-app benchmarks use latest-frame semantics with shared-event producer readiness; a future bounded-latency contract should wire `markConsumed` back to producer-side slot reuse.
+- 3840x2160 RGBA16F unthrottled benchmark. Fixed-FPS RGBA16F is validated; unthrottled RGBA16F has no classic Syphon baseline yet.
 
 ## Benchmark Protocol
 
@@ -140,30 +149,30 @@ Default run protocol:
 
 ### Fixed FPS
 
-- [ ] 1920x1080@60 BGRA8.
-- [ ] 3840x2160@60 BGRA8.
-- [ ] 3840x2160@120 BGRA8 when hardware supports it.
-- [ ] 3840x2160@60 RGBA16F.
+- [x] 1920x1080@60 BGRA8.
+- [x] 3840x2160@60 BGRA8.
+- [x] 3840x2160@120 BGRA8 when hardware supports it.
+- [x] 3840x2160@60 RGBA16F.
 
 ### Max Throughput
 
-- [ ] 1920x1080 BGRA8 unthrottled.
-- [ ] 3840x2160 BGRA8 unthrottled.
+- [x] 1920x1080 BGRA8 unthrottled.
+- [x] 3840x2160 BGRA8 unthrottled.
 - [ ] 3840x2160 RGBA16F unthrottled.
 
 ### Fan-Out
 
-- [ ] 1 client.
-- [ ] 2 clients.
-- [ ] 4 clients.
-- [ ] 8 clients.
-- [ ] 16 clients.
+- [x] 1 client.
+- [x] 2 clients.
+- [x] 4 clients.
+- [x] 8 clients.
+- [x] 16 clients.
 
 ### Slow Consumer
 
-- [ ] 1 ms per-frame client delay.
-- [ ] 5 ms per-frame client delay.
-- [ ] 16 ms per-frame client delay.
+- [x] 1 ms per-frame client delay.
+- [x] 5 ms per-frame client delay.
+- [x] 16 ms per-frame client delay.
 
 ## Metrics
 
@@ -271,11 +280,11 @@ Syphon26 should not claim these numbers until the Syphon26 implementation and be
 
 Syphon26 Phase 1 is not considered validated until:
 
-- [ ] API examples compile.
-- [ ] 1080p60 and 4K60 fixed-FPS tests pass.
-- [ ] Max-throughput tests show a clear speedup versus classic Syphon.
-- [ ] Fan-out tests pass through 8 clients.
-- [ ] Slow-consumer tests show bounded lag.
-- [ ] No CPU readback appears in fast-path traces.
-- [ ] Shared-event mode works or reports a clear fallback reason.
-- [ ] All benchmark artifacts are committed or attached to a release report.
+- [x] API examples compile.
+- [x] 1080p60 and 4K60 fixed-FPS tests pass.
+- [x] Max-throughput tests show a clear speedup versus classic Syphon.
+- [x] Fan-out tests pass through 8 clients.
+- [x] Slow-consumer tests show bounded lag.
+- [x] No CPU readback appears in fast-path traces.
+- [x] Shared-event mode works or reports a clear fallback reason.
+- [x] All benchmark artifacts are committed or attached to a release report.

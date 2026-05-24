@@ -141,7 +141,11 @@ def is_resource_stable(summary):
 
 def write_resource_csv(path, samples):
     with path.open("w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=["elapsedSeconds", "role", "pid", "rssKB", "fdCount", "alive"])
+        writer = csv.DictWriter(
+            file,
+            fieldnames=["elapsedSeconds", "role", "pid", "rssKB", "fdCount", "alive"],
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(samples)
 
