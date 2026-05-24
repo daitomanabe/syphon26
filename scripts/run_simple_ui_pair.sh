@@ -74,7 +74,13 @@ cleanup() {
 trap cleanup EXIT
 
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
-sleep 0.8
+for _ in {1..30}; do
+  if launchctl print "gui/$(id -u)/$SERVICE_NAME" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.1
+done
+sleep 1.0
 
 "$SERVER_APP" --mach-service "$SERVICE_NAME" --name "$STREAM_NAME" --auto-start &
 SERVER_PID=$!

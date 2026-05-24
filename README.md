@@ -100,6 +100,12 @@ For interactive configuration and communication status, run the AppKit UI pair:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_simple_ui_pair.sh
 ```
 
+To export double-clickable AppKit bundles to `~/Desktop/Syphon26 Apps`:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/export_simple_ui_apps.sh
+```
+
 ## Phase 1 Principles
 
 - Keep BGRA8 as the default low-risk format.
