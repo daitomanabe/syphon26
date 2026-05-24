@@ -159,6 +159,49 @@ func xpcControlChannelExchangesIOSurfaceSlots() throws {
 }
 
 @Test
+func xpcControlChannelExchangesSharedEventHandle() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let sharedEvent = try #require(device.makeSharedEvent())
+    let sharedEventHandle = sharedEvent.makeSharedEventHandle()
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+
+    let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
+    let description = Syphon26StreamDescription(
+        streamID: "xpc-shared-event-stream",
+        name: "XPC Shared Event Stream",
+        appName: "Tests",
+        processIdentifier: ProcessInfo.processInfo.processIdentifier,
+        width: 32,
+        height: 16,
+        pixelFormat: .bgra8Unorm,
+        colorPrimaries: .sRGB,
+        transferFunction: .sRGB,
+        alphaMode: .opaque,
+        slotCount: 1,
+        syncMode: .sharedEvent,
+        deliveryMode: .latest
+    )
+    let surface = try #require(IOSurfaceCreate([
+        kIOSurfaceWidth: description.width,
+        kIOSurfaceHeight: description.height,
+        kIOSurfacePixelFormat: Syphon26PixelFormatSupport.cvPixelFormat(for: description.pixelFormat),
+        kIOSurfaceBytesPerElement: Syphon26PixelFormatSupport.bytesPerElement(for: description.pixelFormat)
+    ] as CFDictionary))
+
+    _ = try client.registerProducerTransport(
+        description,
+        surfaces: [surface],
+        sharedEventHandle: sharedEventHandle
+    )
+
+    let receivedHandle = try #require(try client.copySharedEventHandle(streamID: description.streamID))
+    let recreatedEvent = try #require(device.makeSharedEvent(handle: receivedHandle))
+    #expect(recreatedEvent.signaledValue == sharedEvent.signaledValue)
+}
+
+@Test
 func directorySeesRunningServer() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Directory Stream", device: device, width: 64, height: 64)

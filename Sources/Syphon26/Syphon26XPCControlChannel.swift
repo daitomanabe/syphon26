@@ -123,6 +123,7 @@ struct Syphon26XPCProducerTransportRegistrationRequest: Codable, Sendable {
 struct Syphon26XPCProducerTransportRegistrationResponse: Codable, Sendable {
     var stream: Syphon26XPCStreamDescription
     var slots: [Syphon26XPCIOSurfaceSlotDescriptor]
+    var hasSharedEventHandle: Bool
 }
 
 struct Syphon26XPCIOSurfaceSlotRequest: Codable, Sendable {
@@ -131,6 +132,14 @@ struct Syphon26XPCIOSurfaceSlotRequest: Codable, Sendable {
 
 struct Syphon26XPCIOSurfaceSlotResponse: Codable, Sendable {
     var slots: [Syphon26XPCIOSurfaceSlotDescriptor]
+}
+
+struct Syphon26XPCSharedEventHandleRequest: Codable, Sendable {
+    var streamID: Syphon26StreamID
+}
+
+struct Syphon26XPCSharedEventHandleResponse: Codable, Sendable {
+    var hasSharedEventHandle: Bool
 }
 
 struct Syphon26XPCIOSurfaceSlot {
@@ -144,6 +153,7 @@ protocol Syphon26XPCControlServicing {
     func registerProducerTransport(
         _ requestData: Data,
         surfaces: NSArray,
+        sharedEventHandle: MTLSharedEventHandle?,
         withReply reply: @escaping (Data?, NSError?) -> Void
     )
     func retireProducer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
@@ -153,6 +163,10 @@ protocol Syphon26XPCControlServicing {
         _ requestData: Data,
         withReply reply: @escaping (Data?, NSArray?, NSError?) -> Void
     )
+    func copySharedEventHandle(
+        _ requestData: Data,
+        withReply reply: @escaping (Data?, MTLSharedEventHandle?, NSError?) -> Void
+    )
     func listStreams(withReply reply: @escaping (Data?, NSError?) -> Void)
 }
 
@@ -161,6 +175,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
     private var streams: [Syphon26StreamID: Syphon26XPCStreamDescription] = [:]
     private var slotDescriptorsByStream: [Syphon26StreamID: [Syphon26XPCIOSurfaceSlotDescriptor]] = [:]
     private var surfacesByStream: [Syphon26StreamID: [IOSurfaceRef]] = [:]
+    private var sharedEventHandlesByStream: [Syphon26StreamID: MTLSharedEventHandle] = [:]
     private var consumersByStream: [Syphon26StreamID: Set<String>] = [:]
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -181,6 +196,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
     func registerProducerTransport(
         _ requestData: Data,
         surfaces surfaceArray: NSArray,
+        sharedEventHandle: MTLSharedEventHandle?,
         withReply reply: @escaping (Data?, NSError?) -> Void
     ) {
         do {
@@ -201,10 +217,15 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             streams[request.stream.streamID] = request.stream
             slotDescriptorsByStream[request.stream.streamID] = request.slots
             surfacesByStream[request.stream.streamID] = surfaces
+            sharedEventHandlesByStream[request.stream.streamID] = sharedEventHandle
             consumersByStream[request.stream.streamID, default: []] = consumersByStream[request.stream.streamID, default: []]
             lock.unlock()
             try replyEncoded(
-                Syphon26XPCProducerTransportRegistrationResponse(stream: request.stream, slots: request.slots),
+                Syphon26XPCProducerTransportRegistrationResponse(
+                    stream: request.stream,
+                    slots: request.slots,
+                    hasSharedEventHandle: sharedEventHandle != nil
+                ),
                 reply: reply
             )
         } catch let error as Syphon26Error {
@@ -221,6 +242,7 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             streams.removeValue(forKey: request.streamID)
             slotDescriptorsByStream.removeValue(forKey: request.streamID)
             surfacesByStream.removeValue(forKey: request.streamID)
+            sharedEventHandlesByStream.removeValue(forKey: request.streamID)
             consumersByStream.removeValue(forKey: request.streamID)
             lock.unlock()
             reply(Data(), nil)
@@ -280,6 +302,27 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
             reply(try encoder.encode(response), NSArray(array: surfaces), nil)
         } catch let error as Syphon26Error {
             reply(nil, nil, nsError(error))
+        } catch {
+            reply(nil, nil, nsError(Syphon26Error.invalidConfiguration))
+        }
+    }
+
+    func copySharedEventHandle(
+        _ requestData: Data,
+        withReply reply: @escaping (Data?, MTLSharedEventHandle?, NSError?) -> Void
+    ) {
+        do {
+            let request = try decoder.decode(Syphon26XPCSharedEventHandleRequest.self, from: requestData)
+            lock.lock()
+            guard streams[request.streamID] != nil else {
+                lock.unlock()
+                reply(nil, nil, nsError(Syphon26Error.streamNotFound))
+                return
+            }
+            let handle = sharedEventHandlesByStream[request.streamID]
+            lock.unlock()
+            let response = Syphon26XPCSharedEventHandleResponse(hasSharedEventHandle: handle != nil)
+            reply(try encoder.encode(response), handle, nil)
         } catch {
             reply(nil, nil, nsError(Syphon26Error.invalidConfiguration))
         }
@@ -352,15 +395,28 @@ final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
     static func makeInterface() -> NSXPCInterface {
         let interface = NSXPCInterface(with: (any Syphon26XPCControlServicing).self)
         let surfaceClasses = NSSet(objects: NSArray.self, IOSurface.self) as! Set<AnyHashable>
+        let sharedEventHandleClasses = NSSet(objects: MTLSharedEventHandle.self) as! Set<AnyHashable>
         interface.setClasses(
             surfaceClasses,
-            for: #selector((any Syphon26XPCControlServicing).registerProducerTransport(_:surfaces:withReply:)),
+            for: #selector((any Syphon26XPCControlServicing).registerProducerTransport(_:surfaces:sharedEventHandle:withReply:)),
             argumentIndex: 1,
+            ofReply: false
+        )
+        interface.setClasses(
+            sharedEventHandleClasses,
+            for: #selector((any Syphon26XPCControlServicing).registerProducerTransport(_:surfaces:sharedEventHandle:withReply:)),
+            argumentIndex: 2,
             ofReply: false
         )
         interface.setClasses(
             surfaceClasses,
             for: #selector((any Syphon26XPCControlServicing).copyIOSurfaceSlots(_:withReply:)),
+            argumentIndex: 1,
+            ofReply: true
+        )
+        interface.setClasses(
+            sharedEventHandleClasses,
+            for: #selector((any Syphon26XPCControlServicing).copySharedEventHandle(_:withReply:)),
             argumentIndex: 1,
             ofReply: true
         )
@@ -395,7 +451,8 @@ final class Syphon26XPCControlClient {
 
     func registerProducerTransport(
         _ description: Syphon26StreamDescription,
-        surfaces: [IOSurfaceRef]
+        surfaces: [IOSurfaceRef],
+        sharedEventHandle: MTLSharedEventHandle? = nil
     ) throws -> [Syphon26XPCIOSurfaceSlotDescriptor] {
         let slots = surfaces.enumerated().map { index, surface in
             Syphon26XPCIOSurfaceSlotDescriptor(
@@ -414,6 +471,7 @@ final class Syphon26XPCControlClient {
             service.registerProducerTransport(
                 try encoder.encode(request),
                 surfaces: NSArray(array: surfaces),
+                sharedEventHandle: sharedEventHandle,
                 withReply: reply
             )
         }
@@ -451,6 +509,21 @@ final class Syphon26XPCControlClient {
         return zip(response.slots, surfaces).map { slot, surface in
             Syphon26XPCIOSurfaceSlot(descriptor: slot, surface: surface)
         }
+    }
+
+    func copySharedEventHandle(streamID: Syphon26StreamID) throws -> MTLSharedEventHandle? {
+        let request = Syphon26XPCSharedEventHandleRequest(streamID: streamID)
+        let (responseData, handle) = try performSharedEventHandleReply { service, reply in
+            service.copySharedEventHandle(try encoder.encode(request), withReply: reply)
+        }
+        let response = try decoder.decode(Syphon26XPCSharedEventHandleResponse.self, from: responseData)
+        if response.hasSharedEventHandle {
+            guard let handle else {
+                throw Syphon26Error.sharedEventUnavailable
+            }
+            return handle
+        }
+        return nil
     }
 
     func retireConsumer(streamID: Syphon26StreamID, consumerID: String) throws {
@@ -550,6 +623,50 @@ final class Syphon26XPCControlClient {
         let finalResult = result
         lock.unlock()
         return try finalResult?.get() ?? (Data(), NSArray())
+    }
+
+    private func performSharedEventHandleReply(
+        _ body: (
+            any Syphon26XPCControlServicing,
+            @escaping (Data?, MTLSharedEventHandle?, NSError?) -> Void
+        ) throws -> Void
+    ) throws -> (Data, MTLSharedEventHandle?) {
+        let semaphore = DispatchSemaphore(value: 0)
+        let lock = NSLock()
+        var result: Result<(Data, MTLSharedEventHandle?), any Error>?
+
+        let proxy = connection.remoteObjectProxyWithErrorHandler { error in
+            lock.lock()
+            result = .failure(error)
+            lock.unlock()
+            semaphore.signal()
+        }
+
+        guard let service = proxy as? any Syphon26XPCControlServicing else {
+            throw Syphon26Error.xpcConnectionFailed
+        }
+
+        try body(service) { data, handle, error in
+            lock.lock()
+            if let error {
+                result = .failure(Syphon26Error(rawValue: error.code) ?? Syphon26Error.xpcConnectionFailed)
+            } else if let data {
+                result = .success((data, handle))
+            } else {
+                result = .failure(Syphon26Error.sharedEventUnavailable)
+            }
+            lock.unlock()
+            semaphore.signal()
+        }
+
+        guard semaphore.wait(timeout: .now() + 2) == .success else {
+            throw Syphon26Error.timeout
+        }
+
+        lock.lock()
+        let finalResult = result
+        lock.unlock()
+        return try finalResult?.get() ?? (Data(), nil)
     }
 
     private static func copySurfaces(from surfaceArray: NSArray) throws -> [IOSurfaceRef] {

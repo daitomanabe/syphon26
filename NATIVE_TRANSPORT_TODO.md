@@ -55,7 +55,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Add an XPC-based control channel.
 - [x] Exchange stream metadata over XPC.
 - [x] Exchange IOSurface references or secure IOSurface handles over XPC.
-- [ ] Exchange `MTLSharedEventHandle` over XPC.
+- [x] Exchange `MTLSharedEventHandle` over XPC.
 - [x] Add producer registration and retirement.
 - [x] Add consumer registration and retirement.
 - [ ] Add stale process cleanup.
@@ -125,6 +125,6 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Add the server-side ring allocator.
 - [x] Add the client-side ring reader.
 - [x] Add sequence polling sync first.
-- [ ] Add `MTLSharedEvent` sync through XPC second.
+- [x] Add `MTLSharedEvent` sync through XPC second.
 - [ ] Add BGRA8 producer and consumer samples.
 - [x] Run 1080p60 and 1080p max-throughput benchmarks.
