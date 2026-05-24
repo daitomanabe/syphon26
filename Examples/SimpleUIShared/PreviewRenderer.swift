@@ -278,12 +278,28 @@ public final class Syphon26PreviewRenderer {
         float grid = max(gridX, gridY) * rectMask(uv, float2(0.05, 0.05), float2(0.95, 0.95));
         color = mix(color, float3(0.75, 0.75, 0.78), grid * 0.45);
 
-        float center = max(lineMask(uv.x, 0.5, 0.008), lineMask(uv.y, 0.5, 0.008));
-        color = mix(color, float3(1.0, 1.0, 1.0), center * 0.85);
+        float centerX = lineMask(uv.x, 0.5, 0.006);
+        float centerY = lineMask(uv.y, 0.5, 0.006);
+        float center = max(centerX, centerY);
+        color = mix(color, float3(0.92, 0.92, 0.94), center * 0.45);
 
-        float markerX = fract(u.frame / 120.0);
-        float marker = lineMask(uv.x, markerX, 0.015) * rectMask(uv, float2(0.05, 0.0), float2(0.95, 1.0));
-        color = mix(color, float3(1.0, 0.45, 0.0), marker);
+        float scanPhase = fract(u.frame / 360.0);
+        float scanPingPong = 1.0 - abs(scanPhase * 2.0 - 1.0);
+        float markerX = 0.08 + scanPingPong * 0.84;
+        float scanArea = rectMask(uv, float2(0.05, 0.05), float2(0.95, 0.95));
+        float markerGlow = lineMask(uv.x, markerX, 0.105) * scanArea;
+        float trailDirection = mix(-1.0, 1.0, step(0.5, scanPhase));
+        float markerTrailA = lineMask(uv.x, markerX + trailDirection * 0.055, 0.035) * scanArea;
+        float markerTrailB = lineMask(uv.x, markerX + trailDirection * 0.105, 0.025) * scanArea;
+        float markerCore = lineMask(uv.x, markerX, 0.030) * scanArea;
+        color = mix(color, float3(1.0, 0.25, 0.0), markerGlow * 0.28);
+        color = mix(color, float3(1.0, 0.55, 0.0), markerTrailB * 0.35);
+        color = mix(color, float3(1.0, 0.78, 0.0), markerTrailA * 0.48);
+        color = mix(color, float3(1.0, 0.42, 0.0), markerCore);
+
+        float cursorTop = rectMask(uv, float2(markerX - 0.035, 0.050), float2(markerX + 0.035, 0.105));
+        float cursorBottom = rectMask(uv, float2(markerX - 0.035, 0.895), float2(markerX + 0.035, 0.950));
+        color = mix(color, float3(1.0, 0.95, 0.10), max(cursorTop, cursorBottom));
 
         float framePulse = 0.5 + 0.5 * sin(u.frame * 0.21);
         color = mix(color, float3(framePulse, 1.0 - framePulse, 1.0), rectMask(uv, float2(0.43, 0.68), float2(0.57, 0.82)));
