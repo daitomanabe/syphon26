@@ -114,7 +114,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         try presentDrawable(drawable, commandBuffer: commandBuffer, timestamp: timestamp, metadata: metadata)
     }
 
-    func latestFrame(after lastSequence: Syphon26Sequence) -> Syphon26Frame? {
+    func latestFrame(after lastSequence: Syphon26Sequence, waitDidEncode: (@Sendable () -> Void)? = nil) -> Syphon26Frame? {
         lock.lock()
         guard let currentSlotIndex, slots[currentSlotIndex].sequence > lastSequence else {
             lock.unlock()
@@ -132,7 +132,8 @@ final class Syphon26TransportStream: @unchecked Sendable {
             metadata: slot.metadata,
             requiresGPUWait: sharedEvent != nil,
             sharedEvent: sharedEvent,
-            sharedEventValue: slot.sequence
+            sharedEventValue: slot.sequence,
+            waitDidEncode: waitDidEncode
         )
     }
 

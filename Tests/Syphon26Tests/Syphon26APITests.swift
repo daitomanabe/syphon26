@@ -240,4 +240,5 @@ func sharedEventFrameCanEncodeConsumerWait() throws {
     consumerCommandBuffer.commit()
     consumerCommandBuffer.waitUntilCompleted()
     #expect(consumerCommandBuffer.status == .completed)
+    #expect(client.diagnosticsSnapshot().sharedEventWaits == 1)
 }

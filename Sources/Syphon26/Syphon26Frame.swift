@@ -16,6 +16,7 @@ public final class Syphon26Frame: @unchecked Sendable {
     public let requiresGPUWait: Bool
     private let sharedEvent: (any MTLSharedEvent)?
     private let sharedEventValue: UInt64
+    private let waitDidEncode: (@Sendable () -> Void)?
 
     public init(
         texture: any MTLTexture,
@@ -25,7 +26,8 @@ public final class Syphon26Frame: @unchecked Sendable {
         metadata: [String: Syphon26MetadataValue] = [:],
         requiresGPUWait: Bool = false,
         sharedEvent: (any MTLSharedEvent)? = nil,
-        sharedEventValue: UInt64 = 0
+        sharedEventValue: UInt64 = 0,
+        waitDidEncode: (@Sendable () -> Void)? = nil
     ) {
         self.texture = texture
         self.sequence = sequence
@@ -41,6 +43,7 @@ public final class Syphon26Frame: @unchecked Sendable {
         self.requiresGPUWait = requiresGPUWait
         self.sharedEvent = sharedEvent
         self.sharedEventValue = sharedEventValue
+        self.waitDidEncode = waitDidEncode
     }
 
     public func encodeWait(on commandBuffer: any MTLCommandBuffer) throws {
@@ -48,6 +51,7 @@ public final class Syphon26Frame: @unchecked Sendable {
             return
         }
         commandBuffer.encodeWaitForEvent(sharedEvent, value: sharedEventValue)
+        waitDidEncode?()
     }
 
     public func markConsumed(commandBuffer: (any MTLCommandBuffer)? = nil) {

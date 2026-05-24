@@ -89,13 +89,13 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Add client diagnostics snapshot.
 - [x] Track published frames.
 - [x] Track observed frames.
-- [ ] Track missed frames.
-- [ ] Track repeated reads.
+- [x] Track missed frames.
+- [x] Track repeated reads.
 - [ ] Track overwritten frames.
 - [ ] Track current consumer lag.
 - [ ] Track max consumer lag.
-- [ ] Track active client count.
-- [ ] Track sync mode and fallback reason.
+- [x] Track active client count.
+- [x] Track sync mode and fallback reason.
 - [ ] Add `os_signpost` markers for publish, acquire, wait, drop, overwrite, and retire.
 
 ## Samples
