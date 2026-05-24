@@ -60,3 +60,95 @@ func clientReceivesPresentedDrawable() throws {
     #expect(client.diagnosticsSnapshot().observedFrames == 1)
     #expect(server.diagnosticsSnapshot().publishedFrames == 1)
 }
+
+@Test
+func lifecycleCallsAreIdempotent() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let configuration = Syphon26ServerConfiguration(name: "Lifecycle Stream", device: device, width: 64, height: 64)
+    let server = try Syphon26Server(configuration: configuration)
+
+    try server.start()
+    try server.start()
+    #expect(server.isRunning)
+
+    server.stop()
+    server.stop()
+    #expect(!server.isRunning)
+
+    server.invalidate()
+    server.invalidate()
+    #expect(!server.isRunning)
+}
+
+@Test
+func stoppedServerIsRemovedFromDirectory() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let configuration = Syphon26ServerConfiguration(name: "Retire Stream", device: device, width: 64, height: 64)
+    let server = try Syphon26Server(configuration: configuration)
+    try server.start()
+    #expect(Syphon26Directory.shared.stream(withID: server.streamID) != nil)
+
+    server.stop()
+    #expect(Syphon26Directory.shared.stream(withID: server.streamID) == nil)
+}
+
+@Test
+func clientReportsRepeatedReadWhenNoNewFrame() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(configuration: Syphon26ServerConfiguration(name: "Repeated Stream", device: device, width: 64, height: 64))
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+    defer { client.stop() }
+
+    let drawable = try server.acquireDrawable()
+    let commandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+
+    _ = try #require(try client.copyLatestFrame())
+    #expect(try client.copyLatestFrame() == nil)
+    #expect(client.diagnosticsSnapshot().repeatedReads == 1)
+}
+
+@Test
+func latestFrameSemanticsAccountForMissedFrames() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(configuration: Syphon26ServerConfiguration(name: "Missed Stream", device: device, width: 64, height: 64))
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+    defer { client.stop() }
+
+    func publishOne() throws {
+        let drawable = try server.acquireDrawable()
+        let commandBuffer = try #require(queue.makeCommandBuffer())
+        try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+    }
+
+    try publishOne()
+    #expect(try #require(try client.copyLatestFrame()).sequence == 1)
+
+    try publishOne()
+    try publishOne()
+    #expect(try #require(try client.copyLatestFrame()).sequence == 3)
+    #expect(client.diagnosticsSnapshot().missedFrames == 1)
+}
+
+@Test
+func clientStartFailsWhenStreamIsMissing() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let client = try Syphon26Client(configuration: Syphon26ClientConfiguration(device: device, streamID: "missing-stream"))
+    #expect(throws: Syphon26Error.streamNotFound) {
+        try client.start()
+    }
+}
