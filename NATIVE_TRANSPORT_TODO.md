@@ -102,7 +102,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 - [ ] Add a minimal Metal producer app.
 - [ ] Add a minimal Metal consumer app.
-- [ ] Add a multi-consumer benchmark runner.
+- [x] Add a multi-consumer benchmark runner.
 - [ ] Add a slow-consumer benchmark mode.
 - [ ] Add an RGBA16F benchmark mode after format support lands.
 
