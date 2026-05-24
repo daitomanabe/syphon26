@@ -11,6 +11,7 @@ struct BenchmarkOptions {
     var clients = 1
     var outputDirectory = "benchmark-results"
     var name = "Syphon26Benchmark"
+    var syncMode = Syphon26SyncMode.sequencePolling
 
     static func parse(_ arguments: [String]) throws -> BenchmarkOptions {
         var options = BenchmarkOptions()
@@ -42,6 +43,8 @@ struct BenchmarkOptions {
                 options.outputDirectory = try value()
             case "--name":
                 options.name = try value()
+            case "--sync":
+                options.syncMode = try parseSyncMode(value())
             case "--help", "-h":
                 printHelpAndExit()
             default:
@@ -50,6 +53,19 @@ struct BenchmarkOptions {
             index += 1
         }
         return options
+    }
+}
+
+func parseSyncMode(_ value: String) throws -> Syphon26SyncMode {
+    switch value {
+    case "automatic":
+        .automatic
+    case "shared-event", "sharedEvent":
+        .sharedEvent
+    case "sequence-polling", "sequencePolling", "poll":
+        .sequencePolling
+    default:
+        throw BenchmarkCLIError.unknownArgument("--sync \(value)")
     }
 }
 
@@ -96,6 +112,7 @@ func printHelpAndExit() -> Never {
       --warmup <seconds>     Default: 1
       --duration <seconds>   Default: 3
       --clients <count>      Default: 1
+      --sync <mode>          sequence-polling, shared-event, automatic. Default: sequence-polling
       --output <directory>   Default: benchmark-results
       --name <stream name>   Default: Syphon26Benchmark
     """)
@@ -120,7 +137,7 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
             width: options.width,
             height: options.height,
             pixelFormat: .bgra8Unorm,
-            syncMode: .sequencePolling
+            syncMode: options.syncMode
         )
     )
     try server.start()
