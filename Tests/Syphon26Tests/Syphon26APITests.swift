@@ -242,3 +242,72 @@ func sharedEventFrameCanEncodeConsumerWait() throws {
     #expect(consumerCommandBuffer.status == .completed)
     #expect(client.diagnosticsSnapshot().sharedEventWaits == 1)
 }
+
+@Test
+func sharedStateValidatesStreamDescription() throws {
+    let description = Syphon26StreamDescription(
+        streamID: "state",
+        name: "State",
+        appName: nil,
+        processIdentifier: 1,
+        width: 1920,
+        height: 1080,
+        pixelFormat: .bgra8Unorm,
+        colorPrimaries: .sRGB,
+        transferFunction: .sRGB,
+        alphaMode: .opaque,
+        slotCount: 3,
+        syncMode: .sequencePolling,
+        deliveryMode: .latest
+    )
+    let state = Syphon26SharedState(description: description)
+    try state.validate()
+}
+
+@Test
+func sharedStateRejectsBadMagic() throws {
+    let description = Syphon26StreamDescription(
+        streamID: "state",
+        name: "State",
+        appName: nil,
+        processIdentifier: 1,
+        width: 1920,
+        height: 1080,
+        pixelFormat: .bgra8Unorm,
+        colorPrimaries: .sRGB,
+        transferFunction: .sRGB,
+        alphaMode: .opaque,
+        slotCount: 3,
+        syncMode: .sequencePolling,
+        deliveryMode: .latest
+    )
+    var state = Syphon26SharedState(description: description)
+    state.magic = 0
+    #expect(throws: Syphon26Error.invalidSharedState) {
+        try state.validate()
+    }
+}
+
+@Test
+func sharedStateRejectsUnsupportedPixelFormat() throws {
+    let description = Syphon26StreamDescription(
+        streamID: "state",
+        name: "State",
+        appName: nil,
+        processIdentifier: 1,
+        width: 1920,
+        height: 1080,
+        pixelFormat: .bgra8Unorm,
+        colorPrimaries: .sRGB,
+        transferFunction: .sRGB,
+        alphaMode: .opaque,
+        slotCount: 3,
+        syncMode: .sequencePolling,
+        deliveryMode: .latest
+    )
+    var state = Syphon26SharedState(description: description)
+    state.pixelFormatRawValue = UInt64(MTLPixelFormat.rgba32Uint.rawValue)
+    #expect(throws: Syphon26Error.unsupportedPixelFormat) {
+        try state.validate()
+    }
+}

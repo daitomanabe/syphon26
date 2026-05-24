@@ -16,6 +16,8 @@ public enum Syphon26Error: Int, Error, Sendable, Equatable {
     case noAvailableSlot
     case commandBufferRequired
     case internalInconsistency
+    case invalidSharedState
+    case unsupportedSharedStateVersion
 }
 
 extension Syphon26Error: LocalizedError {
@@ -47,7 +49,10 @@ extension Syphon26Error: LocalizedError {
             "A Metal command buffer is required."
         case .internalInconsistency:
             "Syphon26 reached an internal inconsistent state."
+        case .invalidSharedState:
+            "The shared stream state is invalid."
+        case .unsupportedSharedStateVersion:
+            "The shared stream state version is unsupported."
         }
     }
 }
-

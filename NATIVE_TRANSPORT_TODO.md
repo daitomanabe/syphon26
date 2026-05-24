@@ -35,7 +35,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Transport Core
 
-- [ ] Define a private, versioned shared-state header.
+- [x] Define a private, versioned shared-state layout.
 - [ ] Define ring slot metadata:
   - IOSurface reference
   - slot sequence

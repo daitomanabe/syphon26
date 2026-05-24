@@ -28,6 +28,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
     private var activeClients: Set<UUID> = []
     private var serverDiagnostics: Syphon26DiagnosticsSnapshot
     private let sharedEvent: (any MTLSharedEvent)?
+    private var sharedState: Syphon26SharedState
 
     private(set) var description: Syphon26StreamDescription
 
@@ -41,6 +42,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         self.slots = slots.map { Slot(resource: $0) }
         self.serverDiagnostics = diagnostics
         self.sharedEvent = sharedEvent
+        self.sharedState = Syphon26SharedState(description: description)
     }
 
     func acquireDrawable() throws -> Syphon26ServerDrawable {
@@ -143,6 +145,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         let id = UUID()
         lock.lock()
         activeClients.insert(id)
+        sharedState.activeClientCount = UInt32(activeClients.count)
         serverDiagnostics.activeClientCount = activeClients.count
         lock.unlock()
         return id
@@ -152,6 +155,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         guard let id else { return }
         lock.lock()
         activeClients.remove(id)
+        sharedState.activeClientCount = UInt32(activeClients.count)
         serverDiagnostics.activeClientCount = activeClients.count
         lock.unlock()
     }
@@ -177,6 +181,8 @@ final class Syphon26TransportStream: @unchecked Sendable {
         lock.lock()
         Syphon26Signposts.publish()
         sequence += 1
+        sharedState.sequence = sequence
+        sharedState.currentSlot = UInt32(slotIndex)
         slots[slotIndex].sequence = sequence
         slots[slotIndex].timestamp = timestamp
         slots[slotIndex].metadata = metadata
