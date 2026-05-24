@@ -322,6 +322,61 @@ func clientReceivesFrameThroughControlPlaneTransportPath() throws {
 }
 
 @Test
+func fanoutClientsReceiveFrameThroughControlPlaneTransportPath() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    for clientCount in [2, 4, 8, 16] {
+        let listener = Syphon26XPCControlListener()
+        listener.start()
+        let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+        let server = try Syphon26Server(
+            configuration: Syphon26ServerConfiguration(
+                name: "Control Fanout \(clientCount)",
+                device: device,
+                width: 64,
+                height: 64,
+                syncMode: .sequencePolling,
+                controlPlane: controlPlane
+            )
+        )
+        try server.start()
+        defer {
+            server.stop()
+            listener.stop()
+        }
+
+        var clients: [Syphon26Client] = []
+        for _ in 0..<clientCount {
+            let client = try Syphon26Client(
+                configuration: Syphon26ClientConfiguration(
+                    device: device,
+                    streamID: server.streamID,
+                    controlPlane: controlPlane
+                )
+            )
+            try client.start()
+            clients.append(client)
+        }
+
+        let drawable = try server.acquireDrawable()
+        let commandBuffer = try #require(queue.makeCommandBuffer())
+        try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+
+        for client in clients {
+            let frame = try #require(try client.copyLatestFrame())
+            #expect(frame.sequence == 1)
+            #expect(frame.texture.width == 64)
+            client.stop()
+        }
+
+        server.stop()
+        listener.stop()
+    }
+}
+
+@Test
 func directorySeesRunningServer() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Directory Stream", device: device, width: 64, height: 64)
