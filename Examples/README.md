@@ -10,11 +10,11 @@
 
 ## Simple Server App
 
-`Syphon26SimpleServerApp` is the AppKit control-panel version of the server. It can choose resolution and frame rate automatically from the current display or manually from UI fields, pick BGRA8 or RGBA16F, and show stream ID, published frames, client count, actual publish FPS, sync mode, and transport diagnostics.
+`Syphon26SimpleServerApp` is the AppKit control-panel version of the server. It can choose resolution and frame rate automatically from the current display or manually from UI fields, pick BGRA8 or RGBA16F, preview the generated texture, and show stream ID, published frames, client count, actual publish FPS, sync mode, and transport diagnostics. The generated texture includes colored edges, corner blocks, color bars, grid lines, a center cross, and a moving frame marker so cropping, orientation, channel order, format, and dropped/repeated frames are easy to spot.
 
 ## Simple Client App
 
-`Syphon26SimpleClientApp` is the AppKit control-panel version of the client. It lists visible Syphon26 streams, connects to a selected stream, supports automatic or manually expected resolution and frame-rate checks, and shows observed FPS, frame size, repeated reads, sequence, sync mode, and diagnostics.
+`Syphon26SimpleClientApp` is the AppKit control-panel version of the client. It lists visible Syphon26 servers/streams, connects to a selected server, previews the received texture on the GPU, supports automatic or manually expected resolution and frame-rate checks, and shows observed FPS, frame size, repeated reads, sequence, sync mode, and diagnostics.
 
 ## Run Both
 

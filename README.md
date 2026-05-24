@@ -94,7 +94,7 @@ scripts/run_bgra8_sample_pair.sh --duration 3 --width 1920 --height 1080 --fps 6
 scripts/run_rgba16f_sample_pair.sh --duration 3 --width 1920 --height 1080 --fps 60
 ```
 
-For interactive configuration and communication status, run the AppKit UI pair:
+For interactive configuration, preview, and communication status, run the AppKit UI pair:
 
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_simple_ui_pair.sh

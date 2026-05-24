@@ -73,26 +73,39 @@ let package = Package(
         ),
         .executableTarget(
             name: "Syphon26SimpleServerApp",
-            dependencies: ["Syphon26"],
+            dependencies: ["Syphon26", "Syphon26SimpleUIShared"],
             path: "Examples/SimpleServerApp",
             swiftSettings: [
                 .enableUpcomingFeature("ExistentialAny")
             ],
             linkerSettings: [
                 .linkedFramework("AppKit"),
-                .linkedFramework("Metal")
+                .linkedFramework("Metal"),
+                .linkedFramework("MetalKit")
             ]
         ),
         .executableTarget(
             name: "Syphon26SimpleClientApp",
-            dependencies: ["Syphon26"],
+            dependencies: ["Syphon26", "Syphon26SimpleUIShared"],
             path: "Examples/SimpleClientApp",
             swiftSettings: [
                 .enableUpcomingFeature("ExistentialAny")
             ],
             linkerSettings: [
                 .linkedFramework("AppKit"),
-                .linkedFramework("Metal")
+                .linkedFramework("Metal"),
+                .linkedFramework("MetalKit")
+            ]
+        ),
+        .target(
+            name: "Syphon26SimpleUIShared",
+            path: "Examples/SimpleUIShared",
+            swiftSettings: [
+                .enableUpcomingFeature("ExistentialAny")
+            ],
+            linkerSettings: [
+                .linkedFramework("Metal"),
+                .linkedFramework("MetalKit")
             ]
         ),
         .testTarget(

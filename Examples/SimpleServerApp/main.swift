@@ -1,7 +1,9 @@
 import AppKit
 import Foundation
 import Metal
+import MetalKit
 import Syphon26
+import Syphon26SimpleUIShared
 
 private struct LaunchOptions {
     var machServiceName = Syphon26.defaultControlPlaneMachServiceName
@@ -68,6 +70,7 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
     private var device: (any MTLDevice)?
     private var commandQueue: (any MTLCommandQueue)?
+    private var previewRenderer: Syphon26PreviewRenderer?
     private var controlPlane: Syphon26ControlPlane?
     private var server: Syphon26Server?
     private var renderTimer: Timer?
@@ -101,6 +104,7 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
     private let diagnosticsLabel = NSTextField(labelWithString: "-")
     private let errorLabel = NSTextField(labelWithString: "")
     private let meterView = MeterView(frame: NSRect(x: 0, y: 0, width: 360, height: 14))
+    private let previewView = MTKView(frame: NSRect(x: 0, y: 0, width: 640, height: 360))
 
     init(options: LaunchOptions) {
         self.launchOptions = options
@@ -134,6 +138,13 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
         }
         self.device = device
         self.commandQueue = queue
+        do {
+            let renderer = try Syphon26PreviewRenderer(device: device)
+            renderer.configurePreviewView(previewView)
+            self.previewRenderer = renderer
+        } catch {
+            setError("Preview renderer unavailable: \(error)")
+        }
     }
 
     private func setupMenu() {
@@ -165,6 +176,7 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
         root.addArrangedSubview(row("Resolution", [resolutionModePopup, resolutionPresetPopup, widthField, label("W"), heightField, label("H")]))
         root.addArrangedSubview(row("Frame Rate", [fpsModePopup, fpsPresetPopup, fpsField, label("fps")]))
         root.addArrangedSubview(row("Pixel Format", [pixelFormatPopup]))
+        root.addArrangedSubview(previewSection())
 
         startStopButton.target = self
         startStopButton.action = #selector(toggleServer)
@@ -198,7 +210,7 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
         ])
 
         let window = NSWindow(
-            contentRect: NSRect(x: 80, y: 80, width: 760, height: 560),
+            contentRect: NSRect(x: 80, y: 80, width: 820, height: 920),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
@@ -252,6 +264,22 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
             row.addArrangedSubview(view)
         }
         return row
+    }
+
+    private func previewSection() -> NSStackView {
+        let section = NSStackView()
+        section.orientation = .vertical
+        section.alignment = .leading
+        section.spacing = 6
+
+        let title = label("Preview")
+        title.alignment = .left
+        previewView.widthAnchor.constraint(equalToConstant: 640).isActive = true
+        previewView.heightAnchor.constraint(equalToConstant: 360).isActive = true
+
+        section.addArrangedSubview(title)
+        section.addArrangedSubview(previewView)
+        return section
     }
 
     private func label(_ text: String) -> NSTextField {
@@ -318,6 +346,10 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
             setError("Metal device is unavailable.")
             return
         }
+        guard previewRenderer != nil else {
+            setError("Preview renderer is unavailable.")
+            return
+        }
 
         do {
             let size = resolvedResolution()
@@ -381,6 +413,7 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
         streamIDLabel.stringValue = "-"
         meterView.value = 0
         actualFPSLabel.stringValue = "0 fps"
+        previewRenderer?.clear(previewView, commandQueue: commandQueue)
         updateControlAvailability()
         fputs("Syphon26SimpleServerApp stopped\n", stderr)
     }
@@ -405,7 +438,7 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func renderFrame() {
-        guard let server, let commandQueue else {
+        guard let server, let commandQueue, let previewRenderer else {
             return
         }
         do {
@@ -413,7 +446,21 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
             guard let commandBuffer = commandQueue.makeCommandBuffer() else {
                 throw Syphon26Error.commandBufferRequired
             }
-            try encodeFrame(into: drawable.texture, commandBuffer: commandBuffer, frameIndex: frameIndex)
+            let pixelFormat = selectedPixelFormat()
+            try previewRenderer.renderPattern(
+                into: drawable.texture,
+                commandBuffer: commandBuffer,
+                frameIndex: frameIndex,
+                sourcePixelFormat: pixelFormat
+            )
+            try previewRenderer.renderPattern(
+                to: previewView,
+                commandBuffer: commandBuffer,
+                frameIndex: frameIndex,
+                sourcePixelFormat: pixelFormat,
+                width: currentWidth,
+                height: currentHeight
+            )
             try server.presentDrawable(drawable, commandBuffer: commandBuffer)
             commandBuffer.commit()
             frameIndex += 1
@@ -501,30 +548,6 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func encodeFrame(
-        into texture: any MTLTexture,
-        commandBuffer: any MTLCommandBuffer,
-        frameIndex: Int
-    ) throws {
-        let pass = MTLRenderPassDescriptor()
-        guard let colorAttachment = pass.colorAttachments[0] else {
-            throw Syphon26Error.internalInconsistency
-        }
-        colorAttachment.texture = texture
-        colorAttachment.loadAction = .clear
-        colorAttachment.storeAction = .store
-        let phase = Double(frameIndex % 240) / 240.0
-        colorAttachment.clearColor = MTLClearColor(
-            red: phase,
-            green: 1.0 - phase,
-            blue: 0.2 + 0.6 * phase,
-            alpha: 1.0
-        )
-        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else {
-            throw Syphon26Error.internalInconsistency
-        }
-        encoder.endEncoding()
-    }
 }
 
 let app = NSApplication.shared

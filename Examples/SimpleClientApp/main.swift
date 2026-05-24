@@ -1,7 +1,9 @@
 import AppKit
 import Foundation
 import Metal
+import MetalKit
 import Syphon26
+import Syphon26SimpleUIShared
 
 private struct LaunchOptions {
     var machServiceName = Syphon26.defaultControlPlaneMachServiceName
@@ -67,6 +69,7 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
     private var device: (any MTLDevice)?
     private var commandQueue: (any MTLCommandQueue)?
+    private var previewRenderer: Syphon26PreviewRenderer?
     private var controlPlane: Syphon26ControlPlane?
     private var client: Syphon26Client?
     private var streams: [Syphon26StreamDescription] = []
@@ -105,6 +108,7 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
     private let diagnosticsLabel = NSTextField(labelWithString: "-")
     private let errorLabel = NSTextField(labelWithString: "")
     private let meterView = MeterView(frame: NSRect(x: 0, y: 0, width: 360, height: 14))
+    private let previewView = MTKView(frame: NSRect(x: 0, y: 0, width: 640, height: 360))
 
     init(options: LaunchOptions) {
         self.launchOptions = options
@@ -137,6 +141,13 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
         }
         self.device = device
         self.commandQueue = queue
+        do {
+            let renderer = try Syphon26PreviewRenderer(device: device)
+            renderer.configurePreviewView(previewView)
+            self.previewRenderer = renderer
+        } catch {
+            setError("Preview renderer unavailable: \(error)")
+        }
     }
 
     private func setupMenu() {
@@ -166,10 +177,11 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
         root.addArrangedSubview(row("Control Plane", [serviceField]))
         refreshButton.target = self
         refreshButton.action = #selector(refreshPressed)
-        root.addArrangedSubview(row("Stream", [streamPopup, refreshButton]))
+        root.addArrangedSubview(row("Server", [streamPopup, refreshButton]))
         root.addArrangedSubview(row("Resolution", [resolutionModePopup, widthField, label("W"), heightField, label("H")]))
         root.addArrangedSubview(row("Frame Rate", [fpsModePopup, fpsField, label("fps target")]))
         root.addArrangedSubview(row("Pixel Format", [pixelFormatPopup]))
+        root.addArrangedSubview(previewSection())
 
         connectButton.target = self
         connectButton.action = #selector(toggleConnection)
@@ -205,7 +217,7 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
         ])
 
         let window = NSWindow(
-            contentRect: NSRect(x: 120, y: 120, width: 800, height: 620),
+            contentRect: NSRect(x: 120, y: 120, width: 860, height: 980),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
@@ -218,7 +230,9 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func configurePopups() {
-        streamPopup.widthAnchor.constraint(equalToConstant: 420).isActive = true
+        streamPopup.widthAnchor.constraint(equalToConstant: 500).isActive = true
+        streamPopup.target = self
+        streamPopup.action = #selector(streamSelectionChanged)
 
         resolutionModePopup.addItems(withTitles: ["Auto from stream", "Manual expected"])
         resolutionModePopup.target = self
@@ -253,6 +267,22 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
         return row
     }
 
+    private func previewSection() -> NSStackView {
+        let section = NSStackView()
+        section.orientation = .vertical
+        section.alignment = .leading
+        section.spacing = 6
+
+        let title = label("Preview")
+        title.alignment = .left
+        previewView.widthAnchor.constraint(equalToConstant: 640).isActive = true
+        previewView.heightAnchor.constraint(equalToConstant: 360).isActive = true
+
+        section.addArrangedSubview(title)
+        section.addArrangedSubview(previewView)
+        return section
+    }
+
     private func label(_ text: String) -> NSTextField {
         let field = NSTextField(labelWithString: text)
         field.font = .systemFont(ofSize: 12, weight: .medium)
@@ -265,6 +295,11 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func settingsChanged() {
         updateControlAvailability()
+        updateSelectedStreamLabels()
+    }
+
+    @objc private func streamSelectionChanged() {
+        updateSelectedStreamLabels()
     }
 
     @objc private func toggleConnection() {
@@ -335,6 +370,7 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
         streamIDLabel.stringValue = "-"
         meterView.value = 0
         fpsLabel.stringValue = "0 fps"
+        previewRenderer?.clear(previewView, commandQueue: commandQueue)
         updateControlAvailability()
         fputs("Syphon26SimpleClientApp disconnected\n", stderr)
     }
@@ -379,15 +415,29 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
 
-            if frame.requiresGPUWait {
+            var shouldCloseWithCommandBuffer = false
+            if frame.requiresGPUWait || previewRenderer != nil {
                 guard let commandBuffer = commandQueue?.makeCommandBuffer() else {
                     throw Syphon26Error.commandBufferRequired
                 }
-                try frame.encodeWait(on: commandBuffer)
-                commandBuffer.addCompletedHandler { _ in
+                if frame.requiresGPUWait {
+                    try frame.encodeWait(on: commandBuffer)
+                    shouldCloseWithCommandBuffer = true
+                }
+                let previewEncoded = try previewRenderer?.renderTexture(
+                    frame.texture,
+                    to: previewView,
+                    commandBuffer: commandBuffer
+                ) ?? false
+                shouldCloseWithCommandBuffer = shouldCloseWithCommandBuffer || previewEncoded
+                if shouldCloseWithCommandBuffer {
+                    commandBuffer.addCompletedHandler { _ in
+                        frame.close()
+                    }
+                    commandBuffer.commit()
+                } else {
                     frame.close()
                 }
-                commandBuffer.commit()
             } else {
                 frame.close()
             }
@@ -450,7 +500,8 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
                 streamPopup.lastItem?.representedObject = nil
             } else {
                 for stream in streams {
-                    streamPopup.addItem(withTitle: "\(stream.name)  \(stream.width)x\(stream.height)")
+                    let appName = stream.appName ?? "Unknown App"
+                    streamPopup.addItem(withTitle: "\(appName) / \(stream.name)  \(stream.width)x\(stream.height) \(pixelFormatLabel(stream.pixelFormat))")
                     streamPopup.lastItem?.representedObject = stream.streamID
                 }
             }

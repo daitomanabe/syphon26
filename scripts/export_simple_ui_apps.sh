@@ -178,8 +178,8 @@ You can also open these apps directly:
 Direct app launch uses the default control plane service:
 ${SYPHON26_CONTROL_PLANE_SERVICE:-com.syphon26.control-plane}
 
-Exported from:
-${ROOT_DIR}
+Exported by:
+scripts/export_simple_ui_apps.sh
 README
 
 echo "Exported Syphon26 UI apps to:"
