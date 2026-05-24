@@ -231,6 +231,12 @@ Each benchmark run must write:
 - `trace/client-*.sample.txt`
 - `summary.md`
 
+The Syphon26 matrix helper is:
+
+```sh
+python3 scripts/run_benchmark_matrix.py --matrix 1080p60,4k60,4k120,1080pmax,4kmax --clients 1 --sync sequence-polling --configuration release
+```
+
 The final report must include:
 
 - Syphon26 results.
@@ -271,4 +277,3 @@ Syphon26 Phase 1 is not considered validated until:
 - [ ] No CPU readback appears in fast-path traces.
 - [ ] Shared-event mode works or reports a clear fallback reason.
 - [ ] All benchmark artifacts are committed or attached to a release report.
-
