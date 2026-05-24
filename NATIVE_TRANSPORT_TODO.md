@@ -14,14 +14,14 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 ## Public API
 
 - [ ] Review and lock `API_DESIGN.md`.
-- [ ] Add `Syphon26Server`.
-- [ ] Add `Syphon26Client`.
-- [ ] Add `Syphon26Frame`.
-- [ ] Add `Syphon26StreamDescription`.
-- [ ] Add `Syphon26Directory`.
-- [ ] Add `Syphon26ServerDrawable`.
-- [ ] Add `Syphon26DiagnosticsSnapshot`.
-- [ ] Add `Syphon26ErrorDomain`.
+- [x] Add `Syphon26Server`.
+- [x] Add `Syphon26Client`.
+- [x] Add `Syphon26Frame`.
+- [x] Add `Syphon26StreamDescription`.
+- [x] Add `Syphon26Directory`.
+- [x] Add `Syphon26ServerDrawable`.
+- [x] Add `Syphon26DiagnosticsSnapshot`.
+- [x] Add `Syphon26ErrorDomain`.
 - [ ] Add Swift-friendly nullability and lightweight generics to Objective-C headers.
 - [ ] Keep API names independent from classic Syphon classes.
 - [ ] Expose transport capability metadata:
@@ -43,9 +43,10 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
   - dimensions
   - pixel format
   - timestamp
+- [x] Add an initial in-process ring stream for API and test validation.
 - [ ] Implement triple-buffered IOSurface-backed slots.
-- [ ] Support configurable slot count.
-- [ ] Implement latest-frame consumption semantics.
+- [x] Support configurable slot count.
+- [x] Implement latest-frame consumption semantics.
 - [ ] Track slow consumers without blocking the producer.
 - [ ] Add all-slots-busy policy for latest-frame mode.
 
@@ -84,10 +85,10 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Diagnostics
 
-- [ ] Add server diagnostics snapshot.
-- [ ] Add client diagnostics snapshot.
-- [ ] Track published frames.
-- [ ] Track observed frames.
+- [x] Add server diagnostics snapshot.
+- [x] Add client diagnostics snapshot.
+- [x] Track published frames.
+- [x] Track observed frames.
 - [ ] Track missed frames.
 - [ ] Track repeated reads.
 - [ ] Track overwritten frames.
@@ -119,11 +120,11 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## First Code Slice
 
-- [ ] Create the framework or Swift package structure.
+- [x] Create the framework or Swift package structure.
 - [ ] Add the private shared-state header.
 - [ ] Add the server-side ring allocator.
 - [ ] Add the client-side ring reader.
-- [ ] Add sequence polling sync first.
+- [x] Add sequence polling sync first.
 - [ ] Add `MTLSharedEvent` sync through XPC second.
 - [ ] Add BGRA8 producer and consumer samples.
 - [ ] Run 1080p60 and 1080p max-throughput benchmarks.

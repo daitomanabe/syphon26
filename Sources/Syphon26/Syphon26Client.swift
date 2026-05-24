@@ -12,6 +12,8 @@ public final class Syphon26Client: @unchecked Sendable {
     public private(set) var latestSequence: Syphon26Sequence = 0
     public private(set) var lastPresentedSequence: Syphon26Sequence = 0
     public private(set) var diagnostics: Syphon26DiagnosticsSnapshot
+    private var transportStream: Syphon26TransportStream?
+    private var clientRegistrationID: UUID?
 
     public init(configuration: Syphon26ClientConfiguration) throws {
         if let streamDescription = configuration.streamDescription,
@@ -39,10 +41,25 @@ public final class Syphon26Client: @unchecked Sendable {
     }
 
     public func start() throws {
+        if isRunning {
+            return
+        }
+        let resolvedStreamID = try resolveStreamID()
+        guard let stream = Syphon26TransportRegistry.shared.stream(withID: resolvedStreamID) else {
+            throw Syphon26Error.streamNotFound
+        }
+        transportStream = stream
+        streamID = resolvedStreamID
+        streamDescription = stream.description
+        clientRegistrationID = stream.registerClient()
+        diagnostics.streamID = resolvedStreamID
         isRunning = true
     }
 
     public func stop() {
+        transportStream?.unregisterClient(clientRegistrationID)
+        clientRegistrationID = nil
+        transportStream = nil
         isRunning = false
     }
 
@@ -52,7 +69,23 @@ public final class Syphon26Client: @unchecked Sendable {
     }
 
     public func copyLatestFrame() throws -> Syphon26Frame? {
-        nil
+        guard isRunning, let transportStream else {
+            throw Syphon26Error.transportUnavailable
+        }
+        guard let frame = transportStream.latestFrame(after: lastPresentedSequence) else {
+            diagnostics.repeatedReads += 1
+            hasNewFrame = false
+            return nil
+        }
+        if lastPresentedSequence > 0, frame.sequence > lastPresentedSequence + 1 {
+            diagnostics.missedFrames += frame.sequence - lastPresentedSequence - 1
+        }
+        lastPresentedSequence = frame.sequence
+        latestSequence = frame.sequence
+        hasNewFrame = false
+        diagnostics.observedFrames += 1
+        diagnostics.currentConsumerLagFrames = 0
+        return frame
     }
 
     public func copyLatestFrame(timeoutNanoseconds: UInt64) throws -> Syphon26Frame? {
@@ -78,5 +111,17 @@ public final class Syphon26Client: @unchecked Sendable {
             syncMode: configuration.syncMode
         )
     }
-}
 
+    private func resolveStreamID() throws -> Syphon26StreamID {
+        if let streamID {
+            return streamID
+        }
+        if let streamDescription {
+            return streamDescription.streamID
+        }
+        if let firstStream = Syphon26TransportRegistry.shared.descriptions().first {
+            return firstStream.streamID
+        }
+        throw Syphon26Error.streamNotFound
+    }
+}

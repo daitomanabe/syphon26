@@ -13,15 +13,14 @@ public final class Syphon26Directory: @unchecked Sendable {
     }
 
     public func streams() -> [Syphon26StreamDescription] {
-        []
+        Syphon26TransportRegistry.shared.descriptions()
     }
 
     public func stream(withID streamID: Syphon26StreamID) -> Syphon26StreamDescription? {
-        nil
+        Syphon26TransportRegistry.shared.stream(withID: streamID)?.description
     }
 
     public func streams(matching predicate: (Syphon26StreamDescription) -> Bool) -> [Syphon26StreamDescription] {
         streams().filter(predicate)
     }
 }
-
