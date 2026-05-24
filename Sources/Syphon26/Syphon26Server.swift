@@ -70,6 +70,15 @@ public final class Syphon26Server: @unchecked Sendable {
         diagnostics.fallbackReason = syncResolution.fallbackReason
 
         let textures = try Self.makeSlotResources(configuration: configuration)
+        if let controlPlane = configuration.controlPlane {
+            try controlPlane.registerProducer(
+                description: streamDescription,
+                resources: textures,
+                sharedEvent: syncResolution.sharedEvent
+            )
+            diagnostics.xpcMessagesSent += 1
+            diagnostics.xpcMessagesReceived += 1
+        }
         let stream = Syphon26TransportStream(
             description: streamDescription,
             slots: textures,
@@ -87,6 +96,9 @@ public final class Syphon26Server: @unchecked Sendable {
             return
         }
         Syphon26Signposts.retire()
+        if let controlPlane = configuration.controlPlane {
+            try? controlPlane.retireProducer(streamID: streamID)
+        }
         transportStream?.retire()
         Syphon26TransportRegistry.shared.unregister(streamID: streamID)
         transportStream = nil

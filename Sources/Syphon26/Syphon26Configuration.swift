@@ -18,6 +18,7 @@ public struct Syphon26ServerConfiguration: Sendable {
     public var metadata: [String: Syphon26MetadataValue]
     public var allowsFallbacks: Bool
     public var maximumProducerWaitNanoseconds: UInt64
+    public var controlPlane: Syphon26ControlPlane?
 
     public init(
         name: String,
@@ -35,7 +36,8 @@ public struct Syphon26ServerConfiguration: Sendable {
         privateStream: Bool = false,
         metadata: [String: Syphon26MetadataValue] = [:],
         allowsFallbacks: Bool = true,
-        maximumProducerWaitNanoseconds: UInt64 = 0
+        maximumProducerWaitNanoseconds: UInt64 = 0,
+        controlPlane: Syphon26ControlPlane? = nil
     ) {
         self.name = name
         self.appName = appName
@@ -53,6 +55,7 @@ public struct Syphon26ServerConfiguration: Sendable {
         self.metadata = metadata
         self.allowsFallbacks = allowsFallbacks
         self.maximumProducerWaitNanoseconds = maximumProducerWaitNanoseconds
+        self.controlPlane = controlPlane
     }
 }
 
@@ -65,6 +68,7 @@ public struct Syphon26ClientConfiguration: Sendable {
     public var preferredPixelFormats: [MTLPixelFormat]
     public var allowsFallbacks: Bool
     public var maximumFrameWaitNanoseconds: UInt64
+    public var controlPlane: Syphon26ControlPlane?
 
     public init(
         device: any MTLDevice,
@@ -74,7 +78,8 @@ public struct Syphon26ClientConfiguration: Sendable {
         deliveryMode: Syphon26DeliveryMode = .latest,
         preferredPixelFormats: [MTLPixelFormat] = [.bgra8Unorm, .bgra8Unorm_srgb, .rgba16Float],
         allowsFallbacks: Bool = true,
-        maximumFrameWaitNanoseconds: UInt64 = 0
+        maximumFrameWaitNanoseconds: UInt64 = 0,
+        controlPlane: Syphon26ControlPlane? = nil
     ) {
         self.device = device
         self.streamID = streamID
@@ -84,5 +89,6 @@ public struct Syphon26ClientConfiguration: Sendable {
         self.preferredPixelFormats = preferredPixelFormats
         self.allowsFallbacks = allowsFallbacks
         self.maximumFrameWaitNanoseconds = maximumFrameWaitNanoseconds
+        self.controlPlane = controlPlane
     }
 }

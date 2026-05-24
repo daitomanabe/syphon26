@@ -212,6 +212,70 @@ func xpcControlChannelExchangesSharedEventHandle() throws {
 }
 
 @Test
+func serverStartRegistersProducerWithControlPlane() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+    let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Control Producer",
+            device: device,
+            width: 64,
+            height: 64,
+            controlPlane: controlPlane
+        )
+    )
+    try server.start()
+
+    let streams = try controlPlane.listStreams()
+    #expect(streams.map(\.streamID) == [server.streamID])
+    #expect(server.diagnosticsSnapshot().xpcMessagesSent == 1)
+
+    server.stop()
+    #expect(try controlPlane.listStreams().isEmpty)
+}
+
+@Test
+func clientStartRegistersConsumerWithControlPlaneByStreamID() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+    let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Control Consumer Source",
+            device: device,
+            width: 64,
+            height: 64,
+            controlPlane: controlPlane
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(
+        configuration: Syphon26ClientConfiguration(
+            device: device,
+            streamID: server.streamID,
+            controlPlane: controlPlane
+        )
+    )
+    try client.start()
+    defer { client.stop() }
+
+    #expect(client.isRunning)
+    #expect(client.streamDescription?.streamID == server.streamID)
+    #expect(client.streamDescription?.name == "Control Consumer Source")
+    #expect(client.diagnosticsSnapshot().slotDepthFrames == UInt64(server.streamDescription.slotCount))
+    #expect(client.diagnosticsSnapshot().xpcMessagesSent == 3)
+}
+
+@Test
 func directorySeesRunningServer() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Directory Stream", device: device, width: 64, height: 64)

@@ -14,6 +14,9 @@ public final class Syphon26Client: @unchecked Sendable {
     public private(set) var diagnostics: Syphon26DiagnosticsSnapshot
     private var transportStream: Syphon26TransportStream?
     private var clientRegistrationID: UUID?
+    private var xpcConsumerID: String?
+    private var xpcResolvedSlots: [Syphon26XPCResolvedSlot] = []
+    private var xpcSharedEvent: (any MTLSharedEvent)?
     private let diagnosticsLock = NSLock()
 
     public init(configuration: Syphon26ClientConfiguration) throws {
@@ -45,6 +48,10 @@ public final class Syphon26Client: @unchecked Sendable {
         if isRunning {
             return
         }
+        if let controlPlane = configuration.controlPlane {
+            try startWithControlPlane(controlPlane)
+            return
+        }
         let resolvedStreamID = try resolveStreamID()
         guard let stream = Syphon26TransportRegistry.shared.stream(withID: resolvedStreamID) else {
             throw Syphon26Error.streamNotFound
@@ -58,8 +65,16 @@ public final class Syphon26Client: @unchecked Sendable {
     }
 
     public func stop() {
+        if let controlPlane = configuration.controlPlane,
+           let streamID,
+           let xpcConsumerID {
+            try? controlPlane.retireConsumer(streamID: streamID, consumerID: xpcConsumerID)
+        }
         transportStream?.unregisterClient(clientRegistrationID)
         clientRegistrationID = nil
+        xpcConsumerID = nil
+        xpcResolvedSlots.removeAll()
+        xpcSharedEvent = nil
         transportStream = nil
         isRunning = false
     }
@@ -146,6 +161,46 @@ public final class Syphon26Client: @unchecked Sendable {
             return streamDescription.streamID
         }
         if let firstStream = Syphon26TransportRegistry.shared.descriptions().first {
+            return firstStream.streamID
+        }
+        throw Syphon26Error.streamNotFound
+    }
+
+    private func startWithControlPlane(_ controlPlane: Syphon26ControlPlane) throws {
+        let resolvedStreamID = try resolveStreamIDForControlPlane(controlPlane)
+        let consumer = try controlPlane.registerConsumer(streamID: resolvedStreamID)
+        let description = consumer.stream.makeDescription()
+        if !configuration.preferredPixelFormats.isEmpty,
+           !configuration.preferredPixelFormats.contains(description.pixelFormat) {
+            throw Syphon26Error.unsupportedPixelFormat
+        }
+        let slots = try controlPlane.copyIOSurfaceSlots(streamID: resolvedStreamID, device: device)
+        let sharedEvent = try controlPlane.copySharedEvent(streamID: resolvedStreamID, device: device)
+
+        streamID = resolvedStreamID
+        streamDescription = description
+        xpcConsumerID = consumer.consumerID
+        xpcResolvedSlots = slots
+        xpcSharedEvent = sharedEvent
+        updateDiagnostics { diagnostics in
+            diagnostics.streamID = resolvedStreamID
+            diagnostics.syncMode = description.syncMode
+            diagnostics.fallbackReason = description.transportCapabilities.fallbackReason
+            diagnostics.slotDepthFrames = UInt64(slots.count)
+            diagnostics.xpcMessagesSent += 3
+            diagnostics.xpcMessagesReceived += 3
+        }
+        isRunning = true
+    }
+
+    private func resolveStreamIDForControlPlane(_ controlPlane: Syphon26ControlPlane) throws -> Syphon26StreamID {
+        if let streamID {
+            return streamID
+        }
+        if let streamDescription {
+            return streamDescription.streamID
+        }
+        if let firstStream = try controlPlane.listStreams().first {
             return firstStream.streamID
         }
         throw Syphon26Error.streamNotFound
