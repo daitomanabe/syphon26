@@ -4,12 +4,12 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Scope
 
-- [ ] Build a new transport, not a wrapper around the original Syphon Framework.
+- [x] Build a new transport, not a wrapper around the original Syphon Framework.
 - [ ] Support local app-to-app frame sharing on current macOS.
-- [ ] Use Metal textures and IOSurface-backed storage in the fast path.
-- [ ] Avoid CPU texture readback in the fast path.
-- [ ] Defer classic Syphon compatibility bridges until the native transport is stable.
-- [ ] Defer OpenGL support until there is a specific adapter requirement.
+- [x] Use Metal textures and IOSurface-backed storage in the fast path.
+- [x] Avoid CPU texture readback in the fast path.
+- [x] Defer classic Syphon compatibility bridges until the native transport is stable.
+- [x] Defer OpenGL support until there is a specific adapter requirement.
 
 ## Public API
 
@@ -23,7 +23,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Add `Syphon26DiagnosticsSnapshot`.
 - [x] Add `Syphon26ErrorDomain`.
 - [ ] Add Swift-friendly nullability and lightweight generics to Objective-C headers.
-- [ ] Keep API names independent from classic Syphon classes.
+- [x] Keep API names independent from classic Syphon classes.
 - [x] Expose transport capability metadata:
   - sync mode
   - pixel format
@@ -121,10 +121,10 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 ## First Code Slice
 
 - [x] Create the framework or Swift package structure.
-- [ ] Add the private shared-state header.
-- [ ] Add the server-side ring allocator.
-- [ ] Add the client-side ring reader.
+- [x] Add the private shared-state header.
+- [x] Add the server-side ring allocator.
+- [x] Add the client-side ring reader.
 - [x] Add sequence polling sync first.
 - [ ] Add `MTLSharedEvent` sync through XPC second.
 - [ ] Add BGRA8 producer and consumer samples.
-- [ ] Run 1080p60 and 1080p max-throughput benchmarks.
+- [x] Run 1080p60 and 1080p max-throughput benchmarks.
