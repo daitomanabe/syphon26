@@ -1,0 +1,123 @@
+# Syphon26 Native Transport TODO
+
+This checklist tracks the first implementation phase: build the Syphon26 native transport itself without classic Syphon bridge support.
+
+## Scope
+
+- [ ] Build a new transport, not a wrapper around the original Syphon Framework.
+- [ ] Support local app-to-app frame sharing on current macOS.
+- [ ] Use Metal textures and IOSurface-backed storage in the fast path.
+- [ ] Avoid CPU texture readback in the fast path.
+- [ ] Defer classic Syphon compatibility bridges until the native transport is stable.
+- [ ] Defer OpenGL support until there is a specific adapter requirement.
+
+## Public API
+
+- [ ] Add `Syphon26Server`.
+- [ ] Add `Syphon26Client`.
+- [ ] Add `Syphon26Frame`.
+- [ ] Add `Syphon26StreamDescription`.
+- [ ] Add Swift-friendly nullability and lightweight generics to Objective-C headers.
+- [ ] Keep API names independent from classic Syphon classes.
+- [ ] Expose transport capability metadata:
+  - sync mode
+  - pixel format
+  - color primaries
+  - transfer function
+  - alpha mode
+  - ring slot count
+  - fallback reason
+
+## Transport Core
+
+- [ ] Define a private, versioned shared-state header.
+- [ ] Define ring slot metadata:
+  - IOSurface reference
+  - slot sequence
+  - ready sequence
+  - dimensions
+  - pixel format
+  - timestamp
+- [ ] Implement triple-buffered IOSurface-backed slots.
+- [ ] Support configurable slot count.
+- [ ] Implement latest-frame consumption semantics.
+- [ ] Track slow consumers without blocking the producer.
+- [ ] Add all-slots-busy policy for latest-frame mode.
+
+## Control Plane
+
+- [ ] Add an XPC-based control channel.
+- [ ] Exchange stream metadata over XPC.
+- [ ] Exchange IOSurface references or secure IOSurface handles over XPC.
+- [ ] Exchange `MTLSharedEventHandle` over XPC.
+- [ ] Add producer registration and retirement.
+- [ ] Add consumer registration and retirement.
+- [ ] Add stale process cleanup.
+- [ ] Add per-user isolation for any shared memory or temporary state.
+
+## GPU Synchronization
+
+- [ ] Use `MTLSharedEvent` when available.
+- [ ] Signal frame readiness from the producer command buffer.
+- [ ] Wait on frame readiness from the consumer command buffer when needed.
+- [ ] Add atomic sequence polling fallback.
+- [ ] Expose sync fallback reason in diagnostics.
+- [ ] Measure GPU wait time.
+- [ ] Measure producer stall time.
+- [ ] Test producer shutdown while clients are waiting.
+- [ ] Test client shutdown while producer command buffers are in flight.
+
+## Format Support
+
+- [ ] Implement BGRA8 first.
+- [ ] Add RGBA16F after BGRA8 is stable.
+- [ ] Store color primaries metadata.
+- [ ] Store transfer function metadata.
+- [ ] Store alpha mode metadata.
+- [ ] Reject unsupported pixel formats explicitly.
+- [ ] Defer NV12/P010 multi-plane support until a real pipeline requires it.
+
+## Diagnostics
+
+- [ ] Add server diagnostics snapshot.
+- [ ] Add client diagnostics snapshot.
+- [ ] Track published frames.
+- [ ] Track observed frames.
+- [ ] Track missed frames.
+- [ ] Track repeated reads.
+- [ ] Track overwritten frames.
+- [ ] Track current consumer lag.
+- [ ] Track max consumer lag.
+- [ ] Track active client count.
+- [ ] Track sync mode and fallback reason.
+- [ ] Add `os_signpost` markers for publish, acquire, wait, drop, overwrite, and retire.
+
+## Samples
+
+- [ ] Add a minimal Metal producer app.
+- [ ] Add a minimal Metal consumer app.
+- [ ] Add a multi-consumer benchmark runner.
+- [ ] Add a slow-consumer benchmark mode.
+- [ ] Add an RGBA16F benchmark mode after format support lands.
+
+## Benchmark Gates
+
+- [ ] 1920x1080@60 BGRA8.
+- [ ] 3840x2160@60 BGRA8.
+- [ ] 3840x2160@120 BGRA8 when hardware supports it.
+- [ ] 1920x1080 max throughput.
+- [ ] 3840x2160 max throughput.
+- [ ] 1, 2, 4, 8, and 16 consumer fan-out.
+- [ ] Slow consumer delays at 1 ms, 5 ms, and 16 ms.
+- [ ] Verify no CPU readback symbols in fast-path samples.
+
+## First Code Slice
+
+- [ ] Create the framework or Swift package structure.
+- [ ] Add the private shared-state header.
+- [ ] Add the server-side ring allocator.
+- [ ] Add the client-side ring reader.
+- [ ] Add sequence polling sync first.
+- [ ] Add `MTLSharedEvent` sync through XPC second.
+- [ ] Add BGRA8 producer and consumer samples.
+- [ ] Run 1080p60 and 1080p max-throughput benchmarks.

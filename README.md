@@ -1,8 +1,8 @@
 # Syphon26
 
-Syphon26 is a modern, from-scratch implementation of a Syphon-compatible frame sharing system for current macOS, Swift, AppKit, and Metal workflows.
+Syphon26 is a modern, from-scratch frame sharing transport for current macOS, Swift, AppKit, and Metal workflows.
 
-The goal is to keep the practical interoperability that made Syphon useful for live visuals, while rebuilding the transport around current Apple APIs: Metal, IOSurface, CoreVideo, XPC, and explicit GPU synchronization.
+The project is inspired by the original Syphon idea of simple app-to-app frame sharing for live visuals, but the first implementation is a new native transport built around current Apple APIs: Metal, IOSurface, CoreVideo, XPC, and explicit GPU synchronization.
 
 ## Status
 
@@ -16,13 +16,13 @@ Current direction:
 - Latest-frame semantics for live visuals, where slow consumers drop old frames instead of blocking producers.
 - `MTLSharedEvent` synchronization when available, with a sequence-counter fallback.
 - Explicit format metadata for color primaries, transfer function, pixel format, alpha mode, and timestamps.
-- Bridges for compatibility with existing Syphon applications.
+- No classic Syphon bridge in the first implementation phase.
 
 ## Relationship To Syphon
 
 Syphon26 is not a fork of the original Syphon Framework. It is intended as a clean, scratch implementation designed for the 2026-era macOS graphics stack.
 
-The project aims to provide compatibility paths for existing Syphon workflows where practical. Any bridge or compatibility layer should be clearly separated from the new Metal-native transport.
+The first phase does not aim to provide classic Syphon compatibility. It focuses on the Syphon26 native transport itself. Any future bridge or compatibility layer should be a separate adapter around the native transport, not part of the core design.
 
 The original Syphon Framework was created by bangnoise (Tom Butterworth) and vade (Anton Marini), with later Metal work by other contributors. Syphon26 does not claim endorsement by the original Syphon Project or its contributors.
 
@@ -40,31 +40,33 @@ The existing Syphon design predates much of the modern macOS graphics stack. A s
 - HDR and high-precision pixel formats.
 - Repeatable performance benchmarks.
 
-The target is not to remove classic Syphon compatibility. The target is to make a modern transport that can coexist with it and outperform it in Metal-native local pipelines.
+The target is to make a modern transport that can outperform classic Syphon-style pipelines in Metal-native local workflows. Classic Syphon interoperability is intentionally deferred until the Syphon26 core transport is stable.
 
 ## Initial Production Plan
 
-The first production implementation should focus on:
+The first production implementation should focus only on the Syphon26 native transport:
 
 1. Public Objective-C and Swift-friendly APIs for a Metal server and client.
 2. A private, versioned shared-state ABI.
 3. Secure XPC handoff for IOSurface references and `MTLSharedEventHandle`.
-4. BGRA8 compatibility first, then RGBA16F/HDR support.
+4. BGRA8 baseline support first, then RGBA16F/HDR support.
 5. Diagnostics for published frames, observed frames, missed frames, repeated reads, consumer lag, producer stalls, GPU waits, and sync fallback reasons.
-6. Syphon-to-Syphon26 and Syphon26-to-Syphon bridges after the native transport is stable.
+6. Producer and consumer sample apps that use only the Syphon26 transport.
 7. Benchmark gates against classic Syphon at 1080p60, 4K60, 4K120, RGBA16F, and max-throughput workloads.
 
-## Compatibility Principles
+See [NATIVE_TRANSPORT_TODO.md](NATIVE_TRANSPORT_TODO.md) for the implementation checklist.
 
-- Keep BGRA8 as the default compatibility format.
+## Phase 1 Principles
+
+- Keep BGRA8 as the default low-risk format.
 - Keep server names stable.
 - Publish one final composited texture per frame.
 - Do not use screen or window capture as a transport.
 - Do not depend on a preview window being visible for publishing.
-- Treat OpenGL as a compatibility adapter, not the core transport.
+- Keep OpenGL out of the core transport.
+- Defer classic Syphon compatibility bridges.
 - Make fallback modes visible in diagnostics.
 
 ## License
 
 Syphon26 is released under the BSD 3-Clause License. See [LICENSE](LICENSE).
-
