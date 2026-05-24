@@ -549,6 +549,80 @@ func staleConsumerIsRemovedWhenControlConnectionInvalidates() throws {
 }
 
 @Test
+func repeatedCreateDestroyLeavesNoRegisteredStreams() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let listener = Syphon26XPCControlListener()
+    try listener.start()
+    defer { listener.stop() }
+
+    let producerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let observerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+
+    for index in 0..<32 {
+        var server: Syphon26Server? = try Syphon26Server(
+            configuration: Syphon26ServerConfiguration(
+                name: "Create Destroy \(index)",
+                device: device,
+                width: 32,
+                height: 32,
+                controlPlane: producerControlPlane
+            )
+        )
+        weak let weakServer = server
+        try server?.start()
+        let streamID = try #require(server?.streamID)
+        #expect(try observerControlPlane.listStreams().count == 1)
+
+        server?.stop()
+        server = nil
+        #expect(weakServer == nil)
+        #expect(try observerControlPlane.listStreams().isEmpty)
+        #expect(!Syphon26Directory.shared.streams().contains { $0.streamID == streamID })
+    }
+}
+
+@Test
+func repeatedAttachDetachLeavesNoActiveConsumers() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let listener = Syphon26XPCControlListener()
+    try listener.start()
+    defer { listener.stop() }
+
+    let producerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let observerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let consumerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Attach Detach Source",
+            device: device,
+            width: 32,
+            height: 32,
+            controlPlane: producerControlPlane
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    for _ in 0..<32 {
+        var client: Syphon26Client? = try Syphon26Client(
+            configuration: Syphon26ClientConfiguration(
+                device: device,
+                streamID: server.streamID,
+                controlPlane: consumerControlPlane
+            )
+        )
+        weak let weakClient = client
+        try client?.start()
+        #expect(try observerControlPlane.activeConsumerCount(streamID: server.streamID) == 1)
+
+        client?.stop()
+        client = nil
+        #expect(weakClient == nil)
+        #expect(try observerControlPlane.activeConsumerCount(streamID: server.streamID) == 0)
+    }
+}
+
+@Test
 func directorySeesRunningServer() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Directory Stream", device: device, width: 64, height: 64)

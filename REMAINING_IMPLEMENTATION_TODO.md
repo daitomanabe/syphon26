@@ -19,8 +19,8 @@ This is the ordered implementation queue after the native in-process transport M
 - [x] Add stale consumer cleanup when an XPC connection invalidates.
 - [x] Add per-user isolation checks for the control-plane namespace.
 - [x] Define temporary/shared-state ownership and permissions.
-- [ ] Add repeated create/destroy leak tests.
-- [ ] Add repeated attach/detach leak tests.
+- [x] Add repeated create/destroy leak tests.
+- [x] Add repeated attach/detach leak tests.
 
 ## 3. Public API lock
 
