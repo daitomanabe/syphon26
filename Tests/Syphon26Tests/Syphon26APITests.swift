@@ -291,6 +291,85 @@ func boundedLatencyReportsNoSlotWhenAllSlotsAreBusy() throws {
 }
 
 @Test
+func clientReadsFailAfterProducerRetires() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Retired Producer Stream",
+            device: device,
+            width: 64,
+            height: 64
+        )
+    )
+    try server.start()
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+    defer { client.stop() }
+
+    server.stop()
+
+    #expect(throws: Syphon26Error.streamRetired) {
+        _ = try client.copyLatestFrame()
+    }
+}
+
+@Test
+func producerRetireDropsInFlightCompletion() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Retire In Flight Stream",
+            device: device,
+            width: 64,
+            height: 64
+        )
+    )
+    try server.start()
+    let stream = try #require(Syphon26TransportRegistry.shared.stream(withID: server.streamID))
+
+    let drawable = try server.acquireDrawable()
+    let commandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+    server.stop()
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+
+    #expect(stream.diagnosticsSnapshot().publishedFrames == 0)
+}
+
+@Test
+func clientCanStopWhileProducerCommandBufferIsInFlight() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Client Stop In Flight Stream",
+            device: device,
+            width: 64,
+            height: 64
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+
+    let drawable = try server.acquireDrawable()
+    let commandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+    client.stop()
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+
+    let diagnostics = server.diagnosticsSnapshot()
+    #expect(diagnostics.publishedFrames == 1)
+    #expect(diagnostics.activeClientCount == 0)
+}
+
+@Test
 func clientStartFailsWhenStreamIsMissing() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let client = try Syphon26Client(configuration: Syphon26ClientConfiguration(device: device, streamID: "missing-stream"))

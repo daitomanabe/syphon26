@@ -72,7 +72,7 @@ public final class Syphon26Client: @unchecked Sendable {
         guard isRunning, let transportStream else {
             throw Syphon26Error.transportUnavailable
         }
-        guard let frame = transportStream.latestFrame(
+        guard let frame = try transportStream.latestFrame(
             after: lastPresentedSequence,
             clientID: clientRegistrationID,
             waitDidEncode: { [weak self] in

@@ -28,6 +28,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
     private var sequence: Syphon26Sequence = 0
     private var activeClients: Set<UUID> = []
     private var activeClientSequences: [UUID: Syphon26Sequence] = [:]
+    private var retired = false
     private var serverDiagnostics: Syphon26DiagnosticsSnapshot
     private let sharedEvent: (any MTLSharedEvent)?
     private var sharedState: Syphon26SharedState
@@ -61,6 +62,10 @@ final class Syphon26TransportStream: @unchecked Sendable {
     func acquireDrawable() throws -> Syphon26ServerDrawable {
         Syphon26Signposts.acquire()
         lock.lock()
+        guard !retired else {
+            lock.unlock()
+            throw Syphon26Error.streamRetired
+        }
         guard let slotIndex = selectSlotIndexLocked() else {
             lock.unlock()
             throw Syphon26Error.noAvailableSlot
@@ -84,6 +89,12 @@ final class Syphon26TransportStream: @unchecked Sendable {
         timestamp: Syphon26HostTime,
         metadata: [String: Syphon26MetadataValue]
     ) throws {
+        lock.lock()
+        let isRetired = retired
+        lock.unlock()
+        guard !isRetired else {
+            throw Syphon26Error.streamRetired
+        }
         guard drawable.slotIndex >= 0 && drawable.slotIndex < slots.count else {
             throw Syphon26Error.internalInconsistency
         }
@@ -136,8 +147,12 @@ final class Syphon26TransportStream: @unchecked Sendable {
         after lastSequence: Syphon26Sequence,
         clientID: UUID?,
         waitDidEncode: (@Sendable () -> Void)? = nil
-    ) -> Syphon26Frame? {
+    ) throws -> Syphon26Frame? {
         lock.lock()
+        guard !retired else {
+            lock.unlock()
+            throw Syphon26Error.streamRetired
+        }
         guard let currentSlotIndex, slots[currentSlotIndex].sequence > lastSequence else {
             lock.unlock()
             return nil
@@ -202,6 +217,12 @@ final class Syphon26TransportStream: @unchecked Sendable {
         lock.unlock()
     }
 
+    func retire() {
+        lock.lock()
+        retired = true
+        lock.unlock()
+    }
+
     func slotMetadataSnapshot() -> [Syphon26RingSlotMetadata] {
         lock.lock()
         let metadata = slots.map(\.slotMetadata)
@@ -215,6 +236,10 @@ final class Syphon26TransportStream: @unchecked Sendable {
         metadata: [String: Syphon26MetadataValue]
     ) {
         lock.lock()
+        guard !retired else {
+            lock.unlock()
+            return
+        }
         Syphon26Signposts.publish()
         let overwrittenSequence = slots[slotIndex].sequence
         if overwrittenSequence > 0,

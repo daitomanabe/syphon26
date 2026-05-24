@@ -70,8 +70,8 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Expose sync fallback reason in diagnostics.
 - [ ] Measure GPU wait time.
 - [ ] Measure producer stall time.
-- [ ] Test producer shutdown while clients are waiting.
-- [ ] Test client shutdown while producer command buffers are in flight.
+- [x] Test producer shutdown while clients are waiting.
+- [x] Test client shutdown while producer command buffers are in flight.
 
 ## Format Support
 
