@@ -41,10 +41,10 @@ This is the ordered implementation queue after the native in-process transport M
 
 ## 5. Production benchmark pass
 
-- [ ] Run full Syphon26 app-to-app XPC benchmark matrix.
-- [ ] Run classic Syphon matrix on the same machine in the same benchmark session.
-- [ ] Publish JSON, CSV, environment metadata, and trace samples.
-- [ ] Produce speedup tables for fixed-FPS and max-throughput modes.
+- [x] Run full Syphon26 app-to-app XPC benchmark matrix.
+- [x] Run classic Syphon matrix on the same machine in the same benchmark session.
+- [x] Publish JSON, CSV, environment metadata, and trace samples.
+- [x] Produce speedup tables for fixed-FPS and max-throughput modes.
 - [ ] Run 30 minute 1080p60 stability test.
 - [ ] Run 30 minute 4K60 stability test.
 - [ ] Run 10 minute max-throughput stability test.

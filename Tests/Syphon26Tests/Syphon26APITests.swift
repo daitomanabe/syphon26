@@ -453,6 +453,54 @@ func clientReceivesFrameThroughControlPlaneTransportPath() throws {
 }
 
 @Test
+func clientReadsSharedEventControlPlaneFramesWithoutPerFrameXPC() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let listener = Syphon26XPCControlListener()
+    try listener.start()
+    defer { listener.stop() }
+    let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
+
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Shared Event Control Frame Source",
+            device: device,
+            width: 64,
+            height: 64,
+            syncMode: .sharedEvent,
+            controlPlane: controlPlane
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+    guard server.streamDescription.syncMode == .sharedEvent else {
+        return
+    }
+
+    let client = try Syphon26Client(
+        configuration: Syphon26ClientConfiguration(
+            device: device,
+            streamID: server.streamID,
+            controlPlane: controlPlane
+        )
+    )
+    try client.start()
+    defer { client.stop() }
+    let startupMessages = client.diagnosticsSnapshot().xpcMessagesSent
+
+    let drawable = try server.acquireDrawable()
+    let commandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+
+    let frame = try #require(try client.copyLatestFrame())
+    #expect(frame.sequence == 1)
+    #expect(client.diagnosticsSnapshot().observedFrames == 1)
+    #expect(client.diagnosticsSnapshot().xpcMessagesSent == startupMessages)
+}
+
+@Test
 func fanoutClientsReceiveFrameThroughControlPlaneTransportPath() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let queue = try #require(device.makeCommandQueue())

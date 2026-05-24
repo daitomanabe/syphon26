@@ -51,10 +51,10 @@ This plan defines how Syphon26 development is validated and how performance is c
 
 ### Phase 5: Release Candidate Benchmarks
 
-- [ ] Run full Syphon26 matrix.
-- [ ] Run classic Syphon matrix on the same machine.
-- [ ] Publish JSON, CSV, environment metadata, and trace samples.
-- [ ] Produce speedup tables.
+- [x] Run full Syphon26 matrix.
+- [x] Run classic Syphon matrix on the same machine.
+- [x] Publish JSON, CSV, environment metadata, and trace samples.
+- [x] Produce speedup tables.
 - [ ] Verify no CPU readback in fast-path samples.
 
 ## Validation Checklist

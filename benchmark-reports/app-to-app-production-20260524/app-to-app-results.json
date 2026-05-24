@@ -1,0 +1,100 @@
+{
+  "runs": [
+    {
+      "comparison": {
+        "classicSyphonClientFPS": 59.9941955615569,
+        "mode": "fixed",
+        "targetStability": 1.0000967500003755
+      },
+      "consumerFPS": 60.0,
+      "consumerLastSequence": 600,
+      "consumerObservedFrames": 600,
+      "consumerRepeatedReads": 6771,
+      "durationSeconds": 10,
+      "fpsTarget": 60,
+      "height": 1080,
+      "matrix": "1080p60",
+      "pixelFormat": "bgra8",
+      "producerFrames": 660,
+      "producerPublishedFrames": 660,
+      "streamID": "430FFC7C-3A82-41EA-A263-1003A13D387D",
+      "width": 1920
+    },
+    {
+      "comparison": {
+        "classicSyphonClientFPS": 59.97370402971977,
+        "mode": "fixed",
+        "targetStability": 1.0021058557633467
+      },
+      "consumerFPS": 60.1,
+      "consumerLastSequence": 601,
+      "consumerObservedFrames": 601,
+      "consumerRepeatedReads": 6766,
+      "durationSeconds": 10,
+      "fpsTarget": 60,
+      "height": 2160,
+      "matrix": "4k60",
+      "pixelFormat": "bgra8",
+      "producerFrames": 660,
+      "producerPublishedFrames": 660,
+      "streamID": "FA78F229-1B86-403A-A2D2-732592536D7B",
+      "width": 3840
+    },
+    {
+      "comparison": {
+        "classicSyphonClientFPS": 346.44012942859786,
+        "mode": "max",
+        "speedup": 1.925873890823354
+      },
+      "consumerFPS": 667.2,
+      "consumerLastSequence": 29903,
+      "consumerObservedFrames": 3336,
+      "consumerRepeatedReads": 3331,
+      "durationSeconds": 5,
+      "fpsTarget": 0,
+      "height": 1080,
+      "matrix": "1080pmax",
+      "pixelFormat": "bgra8",
+      "producerFrames": 35903,
+      "producerPublishedFrames": 35903,
+      "streamID": "D41368CC-B1B2-4E41-AF7B-D275C88712AC",
+      "width": 1920
+    },
+    {
+      "comparison": {
+        "classicSyphonClientFPS": 343.6226849676139,
+        "mode": "max",
+        "speedup": 1.9405005233075494
+      },
+      "consumerFPS": 666.8,
+      "consumerLastSequence": 20038,
+      "consumerObservedFrames": 3334,
+      "consumerRepeatedReads": 3331,
+      "durationSeconds": 5,
+      "fpsTarget": 0,
+      "height": 2160,
+      "matrix": "4kmax",
+      "pixelFormat": "bgra8",
+      "producerFrames": 24138,
+      "producerPublishedFrames": 24138,
+      "streamID": "345A24AA-D593-4CED-8532-5A633B2CD420",
+      "width": 3840
+    },
+    {
+      "comparison": null,
+      "consumerFPS": 60.1,
+      "consumerLastSequence": 602,
+      "consumerObservedFrames": 601,
+      "consumerRepeatedReads": 6768,
+      "durationSeconds": 10,
+      "fpsTarget": 60,
+      "height": 2160,
+      "matrix": "4k60-rgba16f",
+      "pixelFormat": "rgba16f",
+      "producerFrames": 660,
+      "producerPublishedFrames": 660,
+      "streamID": "26F369EB-B0BE-4F53-B360-1BD76BEBA3FB",
+      "width": 3840
+    }
+  ]
+}

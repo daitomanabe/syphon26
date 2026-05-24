@@ -213,6 +213,9 @@ public final class Syphon26Client: @unchecked Sendable {
         guard isRunning, let streamID, let streamDescription else {
             throw Syphon26Error.transportUnavailable
         }
+        if xpcSharedEvent != nil {
+            return try copyLatestFrameFromSharedEvent(streamDescription: streamDescription)
+        }
         let state = try controlPlane.copySharedState(streamID: streamID)
         try state.validate()
         guard state.sequence > lastPresentedSequence else {
@@ -260,6 +263,57 @@ public final class Syphon26Client: @unchecked Sendable {
             diagnostics.currentConsumerLagFrames = 0
             diagnostics.xpcMessagesSent += 1
             diagnostics.xpcMessagesReceived += 1
+        }
+        return frame
+    }
+
+    private func copyLatestFrameFromSharedEvent(streamDescription: Syphon26StreamDescription) throws -> Syphon26Frame? {
+        guard let xpcSharedEvent, !xpcResolvedSlots.isEmpty else {
+            return nil
+        }
+        let sequence = xpcSharedEvent.signaledValue
+        guard sequence > lastPresentedSequence else {
+            updateDiagnostics { diagnostics in
+                diagnostics.repeatedReads += 1
+            }
+            hasNewFrame = false
+            return nil
+        }
+        let slotIndex = Int((sequence - 1) % UInt64(xpcResolvedSlots.count))
+        guard let slot = xpcResolvedSlots.first(where: { $0.descriptor.slotIndex == slotIndex }) else {
+            throw Syphon26Error.ioSurfaceHandoffFailed
+        }
+        let frame = Syphon26Frame(
+            texture: slot.texture,
+            sequence: sequence,
+            timestamp: 0,
+            streamDescription: streamDescription,
+            requiresGPUWait: true,
+            sharedEvent: xpcSharedEvent,
+            sharedEventValue: sequence,
+            waitDidEncode: { [weak self] in
+                self?.updateDiagnostics { diagnostics in
+                    diagnostics.sharedEventWaits += 1
+                }
+            },
+            waitDidComplete: { [weak self] elapsedNanoseconds in
+                self?.updateDiagnostics { diagnostics in
+                    diagnostics.gpuWaitNanoseconds += elapsedNanoseconds
+                }
+            }
+        )
+        if lastPresentedSequence > 0, frame.sequence > lastPresentedSequence + 1 {
+            let missedFrames = frame.sequence - lastPresentedSequence - 1
+            updateDiagnostics { diagnostics in
+                diagnostics.missedFrames += missedFrames
+            }
+        }
+        lastPresentedSequence = frame.sequence
+        latestSequence = frame.sequence
+        hasNewFrame = false
+        updateDiagnostics { diagnostics in
+            diagnostics.observedFrames += 1
+            diagnostics.currentConsumerLagFrames = 0
         }
         return frame
     }

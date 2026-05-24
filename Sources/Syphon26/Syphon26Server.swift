@@ -80,7 +80,7 @@ public final class Syphon26Server: @unchecked Sendable {
             diagnostics.xpcMessagesReceived += 1
         }
         let sharedStateDidChange: (@Sendable (Syphon26SharedState) -> Void)?
-        if let controlPlane = configuration.controlPlane {
+        if let controlPlane = configuration.controlPlane, syncResolution.sharedEvent == nil {
             sharedStateDidChange = { [streamID] state in
                 try? controlPlane.updateSharedState(streamID: streamID, state: state)
             }

@@ -114,6 +114,18 @@ Passed in this checkpoint:
 
 Still required before release-quality benchmark claims:
 
-- Cross-process/XPC control plane.
-- Secure IOSurface handoff over XPC.
-- Same-run classic Syphon comparison rather than using the sibling baseline artifact.
+- Long-duration 30 minute stability runs.
+- Memory growth and handle leak checks.
+
+## App-To-App Production Checkpoint
+
+The app-to-app benchmark report is published in `benchmark-reports/app-to-app-production-20260524/`.
+
+| Test | Classic Syphon Client FPS | Syphon26 App-To-App Client FPS | Result |
+| --- | ---: | ---: | ---: |
+| 1920x1080@60 BGRA8 | 59.99 | 60.00 | target met |
+| 3840x2160@60 BGRA8 | 59.97 | 60.10 | target met |
+| 1920x1080 max BGRA8 | 346.44 | 667.20 | 1.93x |
+| 3840x2160 max BGRA8 | 343.62 | 666.80 | 1.94x |
+
+These values use a launchd-managed Syphon26 control plane and separate producer/consumer processes. The same-session classic Syphon comparison was rerun from the sibling Syphon-Framework benchmark app.

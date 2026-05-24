@@ -1,0 +1,40 @@
+{
+  "binaryImageOnlyNotes": [
+    "vImage appears only in Binary Images on this system, not in the sampled call graph."
+  ],
+  "forbiddenSymbols": [
+    "CGWindowListCreateImage",
+    "SLWindowListCreateImage",
+    "CGContextDrawImage",
+    "CGDisplayStream",
+    "CVPixelBufferLockBaseAddress",
+    "getBytes",
+    "replaceRegion",
+    "vImage"
+  ],
+  "matchesInCallGraph": {
+    "consumer.sample.txt": {
+      "CGContextDrawImage": false,
+      "CGDisplayStream": false,
+      "CGWindowListCreateImage": false,
+      "CVPixelBufferLockBaseAddress": false,
+      "SLWindowListCreateImage": false,
+      "getBytes": false,
+      "replaceRegion": false,
+      "vImage": false
+    },
+    "producer.sample.txt": {
+      "CGContextDrawImage": false,
+      "CGDisplayStream": false,
+      "CGWindowListCreateImage": false,
+      "CVPixelBufferLockBaseAddress": false,
+      "SLWindowListCreateImage": false,
+      "getBytes": false,
+      "replaceRegion": false,
+      "vImage": false
+    }
+  },
+  "passed": true,
+  "rawTraceDirectory": "benchmark-results/app-to-app-trace-20260524",
+  "source": "sample call graph from Syphon26 app-to-app BGRA8 1080p60 run"
+}

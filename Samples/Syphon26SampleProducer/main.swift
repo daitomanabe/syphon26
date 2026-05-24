@@ -71,10 +71,10 @@ defer { server.stop() }
 
 let deadline = Date().addingTimeInterval(options.duration)
 let frameInterval = options.framesPerSecond > 0 ? 1.0 / options.framesPerSecond : 0
+var nextFrameDeadline = Date()
 var frameCount = 0
 
 while Date() < deadline {
-    let frameStart = Date()
     let drawable = try server.acquireDrawable()
     guard let commandBuffer = queue.makeCommandBuffer() else {
         throw Syphon26Error.commandBufferRequired
@@ -101,9 +101,12 @@ while Date() < deadline {
     frameCount += 1
 
     if frameInterval > 0 {
-        let elapsed = Date().timeIntervalSince(frameStart)
-        if elapsed < frameInterval {
-            Thread.sleep(forTimeInterval: frameInterval - elapsed)
+        nextFrameDeadline = nextFrameDeadline.addingTimeInterval(frameInterval)
+        let sleepTime = nextFrameDeadline.timeIntervalSinceNow
+        if sleepTime > 0 {
+            Thread.sleep(forTimeInterval: sleepTime)
+        } else {
+            nextFrameDeadline = Date()
         }
     }
 }

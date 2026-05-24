@@ -1,0 +1,22 @@
+{
+  "createdAt": "2026-05-24T19:34:32",
+  "source": "Sibling Syphon-Framework SyphonMetalBenchmark, same OS session",
+  "runs": {
+    "1080p60": {
+      "clientFPS": 59.9941955615569,
+      "measuredObservedFrames": 300
+    },
+    "4k60": {
+      "clientFPS": 59.97370402971977,
+      "measuredObservedFrames": 300
+    },
+    "1080pmax": {
+      "clientFPS": 346.44012942859786,
+      "measuredObservedFrames": 1733
+    },
+    "4kmax": {
+      "clientFPS": 343.6226849676139,
+      "measuredObservedFrames": 1719
+    }
+  }
+}
