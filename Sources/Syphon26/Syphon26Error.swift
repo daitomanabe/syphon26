@@ -18,6 +18,7 @@ public enum Syphon26Error: Int, Error, Sendable, Equatable {
     case internalInconsistency
     case invalidSharedState
     case unsupportedSharedStateVersion
+    case namespaceIsolationFailed
 }
 
 extension Syphon26Error: LocalizedError {
@@ -53,6 +54,8 @@ extension Syphon26Error: LocalizedError {
             "The shared stream state is invalid."
         case .unsupportedSharedStateVersion:
             "The shared stream state version is unsupported."
+        case .namespaceIsolationFailed:
+            "The control-plane namespace failed its per-user isolation checks."
         }
     }
 }

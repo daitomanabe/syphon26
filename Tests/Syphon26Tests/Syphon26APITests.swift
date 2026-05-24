@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import IOSurface
 import Metal
@@ -69,7 +70,7 @@ func serverExposesResolvedTransportCapabilities() throws {
 @Test
 func xpcControlChannelRegistersConsumersAndRetiresStreams() throws {
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
 
     let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
@@ -119,7 +120,7 @@ func xpcControlChannelRegistersConsumersAndRetiresStreams() throws {
 @Test
 func xpcControlChannelRejectsMissingConsumerStream() throws {
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
 
     let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
@@ -129,10 +130,104 @@ func xpcControlChannelRejectsMissingConsumerStream() throws {
 }
 
 @Test
+func controlPlaneNamespaceCreatesPrivateRuntimeDirectory() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("syphon26-namespace-\(UUID().uuidString)", isDirectory: true)
+    let namespace = Syphon26ControlPlaneNamespace.testing(
+        userIdentifier: Darwin.getuid(),
+        runtimeDirectory: directory,
+        validatesRuntimeDirectory: true
+    )
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    try namespace.prepareRuntimeDirectory()
+
+    let attributes = try FileManager.default.attributesOfItem(atPath: directory.path)
+    let owner = try #require(attributes[.ownerAccountID] as? NSNumber)
+    let permissions = try #require(attributes[.posixPermissions] as? NSNumber)
+    #expect(owner.uint32Value == Darwin.getuid())
+    #expect(permissions.uint16Value & 0o077 == 0)
+    #expect(namespace.acceptsPeer(userIdentifier: Darwin.getuid()))
+}
+
+@Test
+func controlPlaneNamespaceTightensSharedRuntimeDirectory() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("syphon26-open-namespace-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(
+        at: directory,
+        withIntermediateDirectories: true,
+        attributes: [.posixPermissions: NSNumber(value: Int16(0o700))]
+    )
+    try FileManager.default.setAttributes(
+        [.posixPermissions: NSNumber(value: Int16(0o755))],
+        ofItemAtPath: directory.path
+    )
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let namespace = Syphon26ControlPlaneNamespace.testing(
+        userIdentifier: Darwin.getuid(),
+        runtimeDirectory: directory,
+        validatesRuntimeDirectory: true
+    )
+
+    try namespace.prepareRuntimeDirectory()
+
+    let attributes = try FileManager.default.attributesOfItem(atPath: directory.path)
+    let permissions = try #require(attributes[.posixPermissions] as? NSNumber)
+    #expect(permissions.uint16Value & 0o077 == 0)
+}
+
+@Test
+func controlPlaneNamespaceRejectsSymlinkRuntimeDirectory() throws {
+    let target = FileManager.default.temporaryDirectory
+        .appendingPathComponent("syphon26-namespace-target-\(UUID().uuidString)", isDirectory: true)
+    let link = FileManager.default.temporaryDirectory
+        .appendingPathComponent("syphon26-namespace-link-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(
+        at: target,
+        withIntermediateDirectories: true,
+        attributes: [.posixPermissions: NSNumber(value: Int16(0o700))]
+    )
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+    defer {
+        try? FileManager.default.removeItem(at: link)
+        try? FileManager.default.removeItem(at: target)
+    }
+
+    let namespace = Syphon26ControlPlaneNamespace.testing(
+        userIdentifier: Darwin.getuid(),
+        runtimeDirectory: link,
+        validatesRuntimeDirectory: true
+    )
+
+    #expect(throws: Syphon26Error.namespaceIsolationFailed) {
+        try namespace.prepareRuntimeDirectory()
+    }
+}
+
+@Test
+func xpcControlChannelRejectsDifferentUserNamespace() throws {
+    let namespace = Syphon26ControlPlaneNamespace.testing(userIdentifier: Darwin.getuid() &+ 1)
+    let listener = Syphon26XPCControlListener(namespace: namespace)
+    try listener.start()
+    defer { listener.stop() }
+
+    let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
+    var rejected = false
+    do {
+        _ = try client.listStreams()
+    } catch let error as Syphon26Error {
+        rejected = error == .xpcConnectionFailed || error == .timeout
+    }
+    #expect(rejected)
+}
+
+@Test
 func xpcControlChannelExchangesIOSurfaceSlots() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
 
     let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
@@ -183,7 +278,7 @@ func xpcControlChannelExchangesSharedEventHandle() throws {
     let sharedEvent = try #require(device.makeSharedEvent())
     let sharedEventHandle = sharedEvent.makeSharedEventHandle()
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
 
     let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
@@ -227,7 +322,7 @@ func xpcControlChannelExchangesSharedEventHandle() throws {
 func serverStartRegistersProducerWithControlPlane() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
     let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
 
@@ -254,7 +349,7 @@ func serverStartRegistersProducerWithControlPlane() throws {
 func clientStartRegistersConsumerWithControlPlaneByStreamID() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
     let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
 
@@ -292,7 +387,7 @@ func clientReceivesFrameThroughControlPlaneTransportPath() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let queue = try #require(device.makeCommandQueue())
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
     let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
 
@@ -339,7 +434,7 @@ func fanoutClientsReceiveFrameThroughControlPlaneTransportPath() throws {
     let queue = try #require(device.makeCommandQueue())
     for clientCount in [2, 4, 8, 16] {
         let listener = Syphon26XPCControlListener()
-        listener.start()
+        try listener.start()
         let controlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
         let server = try Syphon26Server(
             configuration: Syphon26ServerConfiguration(
@@ -392,7 +487,7 @@ func fanoutClientsReceiveFrameThroughControlPlaneTransportPath() throws {
 func staleProducerIsRemovedWhenControlConnectionInvalidates() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
 
     let observerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)
@@ -419,7 +514,7 @@ func staleProducerIsRemovedWhenControlConnectionInvalidates() throws {
 func staleConsumerIsRemovedWhenControlConnectionInvalidates() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let listener = Syphon26XPCControlListener()
-    listener.start()
+    try listener.start()
     defer { listener.stop() }
 
     let producerControlPlane = Syphon26ControlPlane(endpoint: listener.endpoint)

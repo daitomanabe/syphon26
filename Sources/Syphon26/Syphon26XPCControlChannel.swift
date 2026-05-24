@@ -551,19 +551,22 @@ final class Syphon26XPCControlConnection: NSObject, Syphon26XPCControlServicing 
 final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
     private let listener: NSXPCListener
     private let service: Syphon26XPCControlService
+    private let namespace: Syphon26ControlPlaneNamespace
 
     var endpoint: NSXPCListenerEndpoint {
         listener.endpoint
     }
 
-    override init() {
+    init(namespace: Syphon26ControlPlaneNamespace = .current()) {
         self.listener = NSXPCListener.anonymous()
         self.service = Syphon26XPCControlService()
+        self.namespace = namespace
         super.init()
         self.listener.delegate = self
     }
 
-    func start() {
+    func start() throws {
+        try namespace.prepareRuntimeDirectory()
         listener.resume()
     }
 
@@ -572,6 +575,9 @@ final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
     }
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
+        guard namespace.acceptsPeer(userIdentifier: newConnection.effectiveUserIdentifier) else {
+            return false
+        }
         let interface = Self.makeInterface()
         let ownerID = UUID()
         newConnection.exportedInterface = interface
@@ -772,7 +778,7 @@ final class Syphon26XPCControlClient {
 
         let proxy = connection.remoteObjectProxyWithErrorHandler { error in
             lock.lock()
-            result = .failure(error)
+            result = .failure(Syphon26Error.xpcConnectionFailed)
             lock.unlock()
             semaphore.signal()
         }
@@ -814,7 +820,7 @@ final class Syphon26XPCControlClient {
 
         let proxy = connection.remoteObjectProxyWithErrorHandler { error in
             lock.lock()
-            result = .failure(error)
+            result = .failure(Syphon26Error.xpcConnectionFailed)
             lock.unlock()
             semaphore.signal()
         }
@@ -858,7 +864,7 @@ final class Syphon26XPCControlClient {
 
         let proxy = connection.remoteObjectProxyWithErrorHandler { error in
             lock.lock()
-            result = .failure(error)
+            result = .failure(Syphon26Error.xpcConnectionFailed)
             lock.unlock()
             semaphore.signal()
         }
