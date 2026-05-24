@@ -201,3 +201,43 @@ func sharedEventSignalIsCountedWhenAvailable() throws {
         #expect(diagnostics.sharedEventSignals == 1)
     }
 }
+
+@Test
+func sharedEventFrameCanEncodeConsumerWait() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Shared Event Wait Stream",
+            device: device,
+            width: 64,
+            height: 64,
+            syncMode: .sharedEvent
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    guard server.streamDescription.syncMode == .sharedEvent else {
+        return
+    }
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+    defer { client.stop() }
+
+    let drawable = try server.acquireDrawable()
+    let producerCommandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: producerCommandBuffer)
+    producerCommandBuffer.commit()
+    producerCommandBuffer.waitUntilCompleted()
+
+    let frame = try #require(try client.copyLatestFrame())
+    #expect(frame.requiresGPUWait)
+
+    let consumerCommandBuffer = try #require(queue.makeCommandBuffer())
+    try frame.encodeWait(on: consumerCommandBuffer)
+    consumerCommandBuffer.commit()
+    consumerCommandBuffer.waitUntilCompleted()
+    #expect(consumerCommandBuffer.status == .completed)
+}

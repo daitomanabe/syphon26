@@ -130,7 +130,9 @@ final class Syphon26TransportStream: @unchecked Sendable {
             timestamp: slot.timestamp,
             streamDescription: streamDescription,
             metadata: slot.metadata,
-            requiresGPUWait: false
+            requiresGPUWait: sharedEvent != nil,
+            sharedEvent: sharedEvent,
+            sharedEventValue: slot.sequence
         )
     }
 
