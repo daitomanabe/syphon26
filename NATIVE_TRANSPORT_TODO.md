@@ -24,7 +24,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Add `Syphon26ErrorDomain`.
 - [ ] Add Swift-friendly nullability and lightweight generics to Objective-C headers.
 - [ ] Keep API names independent from classic Syphon classes.
-- [ ] Expose transport capability metadata:
+- [x] Expose transport capability metadata:
   - sync mode
   - pixel format
   - color primaries

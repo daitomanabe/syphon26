@@ -20,6 +20,37 @@ func serverExposesStreamDescription() throws {
     #expect(server.streamDescription.width == 1920)
     #expect(server.streamDescription.height == 1080)
     #expect(server.streamDescription.pixelFormat == .bgra8Unorm)
+    #expect(server.streamDescription.transportCapabilities.pixelFormat == .bgra8Unorm)
+    #expect(server.streamDescription.transportCapabilities.ringSlotCount == 3)
+    #expect(server.streamDescription.transportCapabilities.fallbackReason == .none)
+}
+
+@Test
+func serverExposesResolvedTransportCapabilities() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let configuration = Syphon26ServerConfiguration(
+        name: "Capability Stream",
+        device: device,
+        width: 64,
+        height: 64,
+        pixelFormat: .rgba16Float,
+        syncMode: .automatic
+    )
+    let server = try Syphon26Server(configuration: configuration)
+    try server.start()
+    defer { server.stop() }
+
+    let capabilities = server.streamDescription.transportCapabilities
+    #expect(capabilities.syncMode == server.diagnosticsSnapshot().syncMode)
+    #expect(capabilities.pixelFormat == .rgba16Float)
+    #expect(capabilities.colorPrimaries == .sRGB)
+    #expect(capabilities.transferFunction == .sRGB)
+    #expect(capabilities.alphaMode == .opaque)
+    #expect(capabilities.ringSlotCount == 3)
+    #expect(capabilities.fallbackReason == server.diagnosticsSnapshot().fallbackReason)
+    #expect(server.streamDescription.capabilities.contains("metal"))
+    #expect(server.streamDescription.capabilities.contains("iosurface"))
+    #expect(server.streamDescription.capabilities.contains("rgba16f"))
 }
 
 @Test

@@ -15,6 +15,7 @@ public struct Syphon26StreamDescription: Sendable, Equatable {
     public var slotCount: Int
     public var syncMode: Syphon26SyncMode
     public var deliveryMode: Syphon26DeliveryMode
+    public var transportCapabilities: Syphon26TransportCapabilities
     public var capabilities: Set<String>
     public var metadata: [String: Syphon26MetadataValue]
     public var descriptionVersion: UInt64
@@ -34,6 +35,7 @@ public struct Syphon26StreamDescription: Sendable, Equatable {
         slotCount: Int,
         syncMode: Syphon26SyncMode,
         deliveryMode: Syphon26DeliveryMode,
+        transportCapabilities: Syphon26TransportCapabilities? = nil,
         capabilities: Set<String> = [],
         metadata: [String: Syphon26MetadataValue] = [:],
         descriptionVersion: UInt64 = 1,
@@ -52,10 +54,17 @@ public struct Syphon26StreamDescription: Sendable, Equatable {
         self.slotCount = slotCount
         self.syncMode = syncMode
         self.deliveryMode = deliveryMode
+        self.transportCapabilities = transportCapabilities ?? Syphon26TransportCapabilities(
+            syncMode: syncMode,
+            pixelFormat: pixelFormat,
+            colorPrimaries: colorPrimaries,
+            transferFunction: transferFunction,
+            alphaMode: alphaMode,
+            ringSlotCount: slotCount
+        )
         self.capabilities = capabilities
         self.metadata = metadata
         self.descriptionVersion = descriptionVersion
         self.createdAtHostTime = createdAtHostTime
     }
 }
-

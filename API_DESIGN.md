@@ -374,10 +374,25 @@ Fields:
 - `slotCount`
 - `syncMode`
 - `deliveryMode`
+- `transportCapabilities`
 - `capabilities`
 - `metadata`
 - `descriptionVersion`
 - `createdAtHostTime`
+
+## `Syphon26TransportCapabilities`
+
+Typed capability metadata attached to `Syphon26StreamDescription`.
+
+Fields:
+
+- `syncMode`
+- `pixelFormat`
+- `colorPrimaries`
+- `transferFunction`
+- `alphaMode`
+- `ringSlotCount`
+- `fallbackReason`
 
 ## `Syphon26Directory`
 
@@ -457,4 +472,3 @@ Codes:
 - Clients must tolerate skipped sequences.
 - No public API should expose raw shared-memory pointers.
 - IOSurface IDs and XPC handles should remain implementation details unless a future advanced API requires them.
-

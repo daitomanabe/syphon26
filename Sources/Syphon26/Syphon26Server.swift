@@ -34,7 +34,11 @@ public final class Syphon26Server: @unchecked Sendable {
             slotCount: configuration.slotCount,
             syncMode: configuration.syncMode,
             deliveryMode: configuration.deliveryMode,
-            capabilities: ["sequence-polling"],
+            capabilities: Self.capabilitySet(
+                syncMode: configuration.syncMode,
+                pixelFormat: configuration.pixelFormat,
+                deliveryMode: configuration.deliveryMode
+            ),
             metadata: configuration.metadata
         )
         self.diagnostics = Syphon26DiagnosticsSnapshot(
@@ -55,6 +59,13 @@ public final class Syphon26Server: @unchecked Sendable {
         }
         let syncResolution = try Self.resolveSyncMode(configuration: configuration)
         streamDescription.syncMode = syncResolution.syncMode
+        streamDescription.transportCapabilities.syncMode = syncResolution.syncMode
+        streamDescription.transportCapabilities.fallbackReason = syncResolution.fallbackReason
+        streamDescription.capabilities = Self.capabilitySet(
+            syncMode: syncResolution.syncMode,
+            pixelFormat: configuration.pixelFormat,
+            deliveryMode: configuration.deliveryMode
+        )
         diagnostics.syncMode = syncResolution.syncMode
         diagnostics.fallbackReason = syncResolution.fallbackReason
 
@@ -198,5 +209,39 @@ public final class Syphon26Server: @unchecked Sendable {
             }
             return (.sequencePolling, .sharedEventUnavailable, nil)
         }
+    }
+
+    private static func capabilitySet(
+        syncMode: Syphon26SyncMode,
+        pixelFormat: MTLPixelFormat,
+        deliveryMode: Syphon26DeliveryMode
+    ) -> Set<String> {
+        var capabilities: Set<String> = ["metal", "iosurface"]
+        switch deliveryMode {
+        case .latest:
+            capabilities.insert("latest-frame")
+        case .boundedLatency:
+            capabilities.insert("bounded-latency")
+        }
+        switch syncMode {
+        case .automatic:
+            capabilities.insert("automatic-sync")
+        case .sharedEvent:
+            capabilities.insert("shared-event")
+        case .sequencePolling:
+            capabilities.insert("sequence-polling")
+        }
+
+        switch pixelFormat {
+        case .bgra8Unorm:
+            capabilities.insert("bgra8")
+        case .bgra8Unorm_srgb:
+            capabilities.insert("bgra8-srgb")
+        case .rgba16Float:
+            capabilities.insert("rgba16f")
+        default:
+            break
+        }
+        return capabilities
     }
 }
