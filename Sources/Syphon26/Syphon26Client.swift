@@ -72,9 +72,13 @@ public final class Syphon26Client: @unchecked Sendable {
         guard isRunning, let transportStream else {
             throw Syphon26Error.transportUnavailable
         }
-        guard let frame = transportStream.latestFrame(after: lastPresentedSequence, waitDidEncode: { [weak self] in
-            self?.diagnostics.sharedEventWaits += 1
-        }) else {
+        guard let frame = transportStream.latestFrame(
+            after: lastPresentedSequence,
+            clientID: clientRegistrationID,
+            waitDidEncode: { [weak self] in
+                self?.diagnostics.sharedEventWaits += 1
+            }
+        ) else {
             diagnostics.repeatedReads += 1
             hasNewFrame = false
             return nil

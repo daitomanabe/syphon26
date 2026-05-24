@@ -177,6 +177,83 @@ func latestFrameSemanticsAccountForMissedFrames() throws {
 }
 
 @Test
+func ringSlotMetadataTracksPublishedFrame() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Slot Metadata Stream",
+            device: device,
+            width: 64,
+            height: 32,
+            slotCount: 2
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let stream = try #require(Syphon26TransportRegistry.shared.stream(withID: server.streamID))
+    let drawable = try server.acquireDrawable()
+    let commandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: commandBuffer, timestamp: 123)
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+
+    let metadata = try #require(stream.slotMetadataSnapshot().first { $0.sequence == 1 })
+    #expect(metadata.readySequence == 1)
+    #expect(metadata.width == 64)
+    #expect(metadata.height == 32)
+    #expect(MTLPixelFormat(rawValue: UInt(metadata.pixelFormatRawValue)) == .bgra8Unorm)
+    #expect(metadata.timestamp == 123)
+    #expect(metadata.ioSurfaceID != nil)
+}
+
+@Test
+func serverDiagnosticsTrackOverwrittenFramesAndConsumerLag() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let server = try Syphon26Server(
+        configuration: Syphon26ServerConfiguration(
+            name: "Lag Stream",
+            device: device,
+            width: 64,
+            height: 64,
+            slotCount: 2
+        )
+    )
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+    defer { client.stop() }
+
+    func publishOne(_ timestamp: Syphon26HostTime) throws {
+        let drawable = try server.acquireDrawable()
+        let commandBuffer = try #require(queue.makeCommandBuffer())
+        try server.presentDrawable(drawable, commandBuffer: commandBuffer, timestamp: timestamp)
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+    }
+
+    try publishOne(1)
+    try publishOne(2)
+    try publishOne(3)
+
+    let beforeRead = server.diagnosticsSnapshot()
+    #expect(beforeRead.overwrittenFrames == 1)
+    #expect(beforeRead.currentConsumerLagFrames == 3)
+    #expect(beforeRead.maxConsumerLagFrames == 3)
+
+    let frame = try #require(try client.copyLatestFrame())
+    #expect(frame.sequence == 3)
+
+    let afterRead = server.diagnosticsSnapshot()
+    #expect(afterRead.currentConsumerLagFrames == 0)
+    #expect(afterRead.maxConsumerLagFrames == 3)
+}
+
+@Test
 func clientStartFailsWhenStreamIsMissing() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let client = try Syphon26Client(configuration: Syphon26ClientConfiguration(device: device, streamID: "missing-stream"))

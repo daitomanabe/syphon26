@@ -18,6 +18,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         var sequence: Syphon26Sequence = 0
         var timestamp: Syphon26HostTime = 0
         var metadata: [String: Syphon26MetadataValue] = [:]
+        var slotMetadata: Syphon26RingSlotMetadata
     }
 
     private let lock = NSLock()
@@ -26,6 +27,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
     private var currentSlotIndex: Int?
     private var sequence: Syphon26Sequence = 0
     private var activeClients: Set<UUID> = []
+    private var activeClientSequences: [UUID: Syphon26Sequence] = [:]
     private var serverDiagnostics: Syphon26DiagnosticsSnapshot
     private let sharedEvent: (any MTLSharedEvent)?
     private var sharedState: Syphon26SharedState
@@ -39,7 +41,18 @@ final class Syphon26TransportStream: @unchecked Sendable {
         sharedEvent: (any MTLSharedEvent)? = nil
     ) {
         self.description = description
-        self.slots = slots.map { Slot(resource: $0) }
+        self.slots = slots.enumerated().map { index, resource in
+            Slot(
+                resource: resource,
+                slotMetadata: Syphon26RingSlotMetadata(
+                    slotIndex: index,
+                    ioSurfaceID: resource.surface.map { UInt32(IOSurfaceGetID($0)) },
+                    width: description.width,
+                    height: description.height,
+                    pixelFormatRawValue: UInt64(description.pixelFormat.rawValue)
+                )
+            )
+        }
         self.serverDiagnostics = diagnostics
         self.sharedEvent = sharedEvent
         self.sharedState = Syphon26SharedState(description: description)
@@ -117,7 +130,11 @@ final class Syphon26TransportStream: @unchecked Sendable {
         try presentDrawable(drawable, commandBuffer: commandBuffer, timestamp: timestamp, metadata: metadata)
     }
 
-    func latestFrame(after lastSequence: Syphon26Sequence, waitDidEncode: (@Sendable () -> Void)? = nil) -> Syphon26Frame? {
+    func latestFrame(
+        after lastSequence: Syphon26Sequence,
+        clientID: UUID?,
+        waitDidEncode: (@Sendable () -> Void)? = nil
+    ) -> Syphon26Frame? {
         lock.lock()
         guard let currentSlotIndex, slots[currentSlotIndex].sequence > lastSequence else {
             lock.unlock()
@@ -126,6 +143,10 @@ final class Syphon26TransportStream: @unchecked Sendable {
         Syphon26Signposts.consume()
         let slot = slots[currentSlotIndex]
         let streamDescription = description
+        if let clientID, activeClientSequences[clientID] != nil {
+            activeClientSequences[clientID] = slot.sequence
+            updateConsumerLagLocked()
+        }
         lock.unlock()
 
         return Syphon26Frame(
@@ -145,8 +166,10 @@ final class Syphon26TransportStream: @unchecked Sendable {
         let id = UUID()
         lock.lock()
         activeClients.insert(id)
+        activeClientSequences[id] = 0
         sharedState.activeClientCount = UInt32(activeClients.count)
         serverDiagnostics.activeClientCount = activeClients.count
+        updateConsumerLagLocked()
         lock.unlock()
         return id
     }
@@ -155,8 +178,10 @@ final class Syphon26TransportStream: @unchecked Sendable {
         guard let id else { return }
         lock.lock()
         activeClients.remove(id)
+        activeClientSequences.removeValue(forKey: id)
         sharedState.activeClientCount = UInt32(activeClients.count)
         serverDiagnostics.activeClientCount = activeClients.count
+        updateConsumerLagLocked()
         lock.unlock()
     }
 
@@ -170,7 +195,16 @@ final class Syphon26TransportStream: @unchecked Sendable {
     func resetDiagnostics(_ diagnostics: Syphon26DiagnosticsSnapshot) {
         lock.lock()
         serverDiagnostics = diagnostics
+        updateConsumerLagLocked()
+        serverDiagnostics.activeClientCount = activeClients.count
         lock.unlock()
+    }
+
+    func slotMetadataSnapshot() -> [Syphon26RingSlotMetadata] {
+        lock.lock()
+        let metadata = slots.map(\.slotMetadata)
+        lock.unlock()
+        return metadata
     }
 
     private func publishCompletedDrawable(
@@ -180,16 +214,36 @@ final class Syphon26TransportStream: @unchecked Sendable {
     ) {
         lock.lock()
         Syphon26Signposts.publish()
+        let overwrittenSequence = slots[slotIndex].sequence
+        if overwrittenSequence > 0,
+           activeClientSequences.values.contains(where: { $0 < overwrittenSequence }) {
+            serverDiagnostics.overwrittenFrames += 1
+        }
         sequence += 1
         sharedState.sequence = sequence
         sharedState.currentSlot = UInt32(slotIndex)
         slots[slotIndex].sequence = sequence
         slots[slotIndex].timestamp = timestamp
         slots[slotIndex].metadata = metadata
+        slots[slotIndex].slotMetadata.sequence = sequence
+        slots[slotIndex].slotMetadata.readySequence = sequence
+        slots[slotIndex].slotMetadata.timestamp = timestamp
         currentSlotIndex = slotIndex
         serverDiagnostics.publishedFrames += 1
         serverDiagnostics.activeClientCount = activeClients.count
+        updateConsumerLagLocked()
         lock.unlock()
+    }
+
+    private func updateConsumerLagLocked() {
+        guard !activeClientSequences.isEmpty else {
+            serverDiagnostics.currentConsumerLagFrames = 0
+            return
+        }
+        let oldestObservedSequence = activeClientSequences.values.min() ?? sequence
+        let currentLag = sequence > oldestObservedSequence ? sequence - oldestObservedSequence : 0
+        serverDiagnostics.currentConsumerLagFrames = currentLag
+        serverDiagnostics.maxConsumerLagFrames = max(serverDiagnostics.maxConsumerLagFrames, currentLag)
     }
 }
 

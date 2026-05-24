@@ -147,6 +147,9 @@ struct BenchmarkManifest: Codable {
     var clients: Int
     var serverFrames: UInt64
     var serverFPS: Double
+    var serverOverwrittenFrames: UInt64
+    var serverCurrentConsumerLagFrames: UInt64
+    var serverMaxConsumerLagFrames: UInt64
     var minClientFrames: UInt64
     var minClientFPS: Double
     var maxMissedFrames: UInt64
@@ -277,6 +280,9 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
         clients: options.clients,
         serverFrames: serverDiagnostics.publishedFrames,
         serverFPS: Double(serverDiagnostics.publishedFrames) / elapsed,
+        serverOverwrittenFrames: serverDiagnostics.overwrittenFrames,
+        serverCurrentConsumerLagFrames: serverDiagnostics.currentConsumerLagFrames,
+        serverMaxConsumerLagFrames: serverDiagnostics.maxConsumerLagFrames,
         minClientFrames: minClientFrames,
         minClientFPS: Double(minClientFrames) / elapsed,
         maxMissedFrames: maxMissedFrames,

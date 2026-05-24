@@ -36,7 +36,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 ## Transport Core
 
 - [x] Define a private, versioned shared-state layout.
-- [ ] Define ring slot metadata:
+- [x] Define ring slot metadata:
   - IOSurface reference
   - slot sequence
   - ready sequence
@@ -91,9 +91,9 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Track observed frames.
 - [x] Track missed frames.
 - [x] Track repeated reads.
-- [ ] Track overwritten frames.
-- [ ] Track current consumer lag.
-- [ ] Track max consumer lag.
+- [x] Track overwritten frames.
+- [x] Track current consumer lag.
+- [x] Track max consumer lag.
 - [x] Track active client count.
 - [x] Track sync mode and fallback reason.
 - [x] Add `os_signpost` markers for publish, acquire, wait, consume, and retire.
