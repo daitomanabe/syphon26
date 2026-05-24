@@ -57,6 +57,7 @@ The first production implementation should focus only on the Syphon26 native tra
 See [NATIVE_TRANSPORT_TODO.md](NATIVE_TRANSPORT_TODO.md) for the implementation checklist.
 See [API_DESIGN.md](API_DESIGN.md) for the Phase 1 `Syphon26Server` / `Syphon26Client` API surface.
 See [VALIDATION_BENCHMARK_PLAN.md](VALIDATION_BENCHMARK_PLAN.md) for validation and classic Syphon comparison benchmarks.
+See [BENCHMARK_RESULTS_20260524.md](BENCHMARK_RESULTS_20260524.md) for the first MVP benchmark checkpoint.
 
 ## Phase 1 Principles
 
