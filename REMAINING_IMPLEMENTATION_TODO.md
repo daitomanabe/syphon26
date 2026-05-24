@@ -24,12 +24,12 @@ This is the ordered implementation queue after the native in-process transport M
 
 ## 3. Public API lock
 
-- [ ] Review and lock `API_DESIGN.md`.
-- [ ] Add Swift compile-only API examples.
-- [ ] Add Objective-C compile-only API examples.
-- [ ] Add Objective-C wrapper headers with nullability annotations.
-- [ ] Add lightweight generic annotations where Objective-C collections are exposed.
-- [ ] Mark bridge-related APIs explicitly out of scope for Phase 1.
+- [x] Review and lock `API_DESIGN.md`.
+- [x] Add Swift compile-only API examples.
+- [x] Add Objective-C compile-only API examples.
+- [x] Add Objective-C wrapper headers with nullability annotations.
+- [x] Add lightweight generic annotations where Objective-C collections are exposed.
+- [x] Mark bridge-related APIs explicitly out of scope for Phase 1.
 
 ## 4. Native samples
 

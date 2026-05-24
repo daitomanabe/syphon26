@@ -1,0 +1,4 @@
+#ifndef SYPHON26_STREAM_DESCRIPTION_H
+#define SYPHON26_STREAM_DESCRIPTION_H
+#import <Syphon26/Syphon26.h>
+#endif

@@ -13,7 +13,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Public API
 
-- [ ] Review and lock `API_DESIGN.md`.
+- [x] Review and lock `API_DESIGN.md`.
 - [x] Add `Syphon26Server`.
 - [x] Add `Syphon26Client`.
 - [x] Add `Syphon26Frame`.
@@ -22,7 +22,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Add `Syphon26ServerDrawable`.
 - [x] Add `Syphon26DiagnosticsSnapshot`.
 - [x] Add `Syphon26ErrorDomain`.
-- [ ] Add Swift-friendly nullability and lightweight generics to Objective-C headers.
+- [x] Add Swift-friendly nullability and lightweight generics to Objective-C headers.
 - [x] Keep API names independent from classic Syphon classes.
 - [x] Expose transport capability metadata:
   - sync mode

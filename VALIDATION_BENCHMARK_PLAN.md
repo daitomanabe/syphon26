@@ -9,8 +9,8 @@ This plan defines how Syphon26 development is validated and how performance is c
 - [ ] Review `API_DESIGN.md`.
 - [ ] Freeze Phase 1 public type names.
 - [ ] Freeze Phase 1 initializer and frame acquisition semantics.
-- [ ] Mark all bridge-related APIs out of scope.
-- [ ] Add compile-only Objective-C and Swift API usage examples.
+- [x] Mark all bridge-related APIs out of scope.
+- [x] Add compile-only Objective-C and Swift API usage examples.
 
 ### Phase 1: Sequence-Poll Transport
 

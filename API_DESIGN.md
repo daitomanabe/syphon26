@@ -2,6 +2,8 @@
 
 This document defines the first public API surface for Syphon26. Phase 1 is the native Syphon26 transport only. Classic Syphon bridge APIs are intentionally out of scope.
 
+Status: Phase 1 API locked on 2026-05-24 for the native transport developer-preview surface. Any API change must update this document, `include/Syphon26/Syphon26.h`, and the compile-only examples in `Examples/APIUsage/`.
+
 ## Design Goals
 
 - Provide a small, explicit server/client API for Metal-native frame sharing.
@@ -13,7 +15,7 @@ This document defines the first public API surface for Syphon26. Phase 1 is the 
 
 ## Module Surface
 
-Public headers for Phase 1:
+Public Objective-C headers for Phase 1 live under `include/Syphon26/`. `Syphon26.h` is the authoritative umbrella header; the per-type headers are forwarding headers for framework-style imports:
 
 - `Syphon26.h`
 - `Syphon26Server.h`
@@ -34,6 +36,8 @@ Private headers:
 - `Syphon26XPCProtocolPrivate.h`
 - `Syphon26SharedEventPrivate.h`
 - `Syphon26IOSurfacePrivate.h`
+
+Swift API is exposed by the `Syphon26` SwiftPM library target. Objective-C bridge headers lock the intended wrapper shape and are validated with `scripts/validate_api_examples.sh`.
 
 ## Core Types
 
@@ -423,7 +427,7 @@ Internal messages:
 - consumer retirement
 - stream list query
 
-The current control-plane payload exchanges typed stream metadata. IOSurface and `MTLSharedEventHandle` handoff are the next private payloads and should not become public API unless an advanced use case requires them.
+The current control-plane payload exchanges typed stream metadata, IOSurface references, `MTLSharedEventHandle`, and compact shared-state snapshots. Those payloads remain private implementation details and should not become public API unless an advanced use case requires them.
 
 ## `Syphon26DiagnosticsSnapshot`
 
@@ -475,6 +479,21 @@ Codes:
 - `Syphon26ErrorNoAvailableSlot`
 - `Syphon26ErrorCommandBufferRequired`
 - `Syphon26ErrorInternalInconsistency`
+- `Syphon26ErrorInvalidSharedState`
+- `Syphon26ErrorUnsupportedSharedStateVersion`
+- `Syphon26ErrorNamespaceIsolationFailed`
+
+## Bridge APIs Out Of Scope
+
+Classic Syphon compatibility is deliberately not part of Phase 1. The locked native API must not expose:
+
+- classic `SyphonServer` or `SyphonClient` wrappers
+- OpenGL texture publishing or receiving APIs
+- classic Syphon discovery compatibility
+- bridge-specific metadata normalization
+- APIs that expose raw IOSurface IDs, raw shared-memory pointers, or XPC handles as public contracts
+
+Future bridge work should be implemented as a separate adapter layered around the native Syphon26 transport.
 
 ## API Rules
 
