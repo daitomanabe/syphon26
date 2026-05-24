@@ -24,6 +24,16 @@ func defaultControlPlaneNameIsPublicAndStable() throws {
 }
 
 @Test
+func controlPlaneExposesPublicStreamList() throws {
+    let server = Syphon26ControlPlaneServer()
+    try server.start()
+    defer { server.stop() }
+
+    let controlPlane = server.makeControlPlane()
+    #expect(try controlPlane.streams().isEmpty)
+}
+
+@Test
 func serverConfigurationValidationRejectsInvalidSize() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Invalid", device: device, width: 0, height: 1080)

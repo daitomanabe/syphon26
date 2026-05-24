@@ -58,6 +58,12 @@ or with an explicit service:
 let controlPlane = Syphon26ControlPlane(machServiceName: "com.example.yourapp.syphon26")
 ```
 
+List visible streams:
+
+```swift
+let streams = try controlPlane.streams()
+```
+
 ## Minimal Server
 
 ```swift

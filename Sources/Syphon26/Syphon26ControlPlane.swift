@@ -20,6 +20,10 @@ public final class Syphon26ControlPlane: @unchecked Sendable {
         client.invalidate()
     }
 
+    public func streams() throws -> [Syphon26StreamDescription] {
+        try client.listStreams()
+    }
+
     func registerProducer(
         description: Syphon26StreamDescription,
         resources: [Syphon26SlotResource],

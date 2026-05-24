@@ -47,6 +47,7 @@ The Swift library product is the Phase 1 embedding surface for Swift/AppKit/Meta
 - `Syphon26.defaultControlPlaneMachServiceName`
 - `Syphon26ControlPlane()`
 - `Syphon26ControlPlane(machServiceName:)`
+- `Syphon26ControlPlane.streams()`
 - `Syphon26ControlPlaneServiceMain.runDefault()`
 - `Syphon26ControlPlaneServiceMain.run(machServiceName:)`
 
