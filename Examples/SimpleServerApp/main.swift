@@ -73,11 +73,12 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
     private var previewRenderer: Syphon26PreviewRenderer?
     private var controlPlane: Syphon26ControlPlane?
     private var server: Syphon26Server?
-    private var renderTimer: Timer?
+    private var renderTimer: (any DispatchSourceTimer)?
     private var metricsTimer: Timer?
     private var frameIndex = 0
     private var lastPublishedFrames: UInt64 = 0
     private var lastMetricsTime = Date()
+    private var animationStartTime = ProcessInfo.processInfo.systemUptime
     private var currentTargetFPS = 60.0
     private var currentWidth = 1920
     private var currentHeight = 1080
@@ -376,6 +377,7 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
             self.currentHeight = size.height
             self.currentTargetFPS = fps
             self.frameIndex = 0
+            self.animationStartTime = ProcessInfo.processInfo.systemUptime
             self.lastPublishedFrames = 0
             self.lastMetricsTime = Date()
             self.commandQueue = commandQueue
@@ -400,8 +402,8 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func stopServer() {
-        renderTimer?.invalidate()
         metricsTimer?.invalidate()
+        renderTimer?.cancel()
         renderTimer = nil
         metricsTimer = nil
         server?.stop()
@@ -420,12 +422,18 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
 
     private func startTimers(fps: Double) {
         let interval = 1.0 / max(fps, 1.0)
-        let renderTimer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+        let renderTimer = DispatchSource.makeTimerSource(queue: .main)
+        renderTimer.schedule(
+            deadline: .now(),
+            repeating: .nanoseconds(Int((interval * 1_000_000_000).rounded())),
+            leeway: .nanoseconds(0)
+        )
+        renderTimer.setEventHandler { [weak self] in
             Task { @MainActor [weak self] in
                 self?.renderFrame()
             }
         }
-        RunLoop.main.add(renderTimer, forMode: .common)
+        renderTimer.resume()
         self.renderTimer = renderTimer
 
         let metricsTimer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -447,22 +455,29 @@ private final class ServerAppDelegate: NSObject, NSApplicationDelegate {
                 throw Syphon26Error.commandBufferRequired
             }
             let pixelFormat = selectedPixelFormat()
+            let animationTime = ProcessInfo.processInfo.systemUptime - animationStartTime
             try previewRenderer.renderPattern(
                 into: drawable.texture,
                 commandBuffer: commandBuffer,
                 frameIndex: frameIndex,
+                animationTimeSeconds: animationTime,
                 sourcePixelFormat: pixelFormat
-            )
-            try previewRenderer.renderPattern(
-                to: previewView,
-                commandBuffer: commandBuffer,
-                frameIndex: frameIndex,
-                sourcePixelFormat: pixelFormat,
-                width: currentWidth,
-                height: currentHeight
             )
             try server.presentDrawable(drawable, commandBuffer: commandBuffer)
             commandBuffer.commit()
+
+            if let previewCommandBuffer = commandQueue.makeCommandBuffer() {
+                try previewRenderer.renderPattern(
+                    to: previewView,
+                    commandBuffer: previewCommandBuffer,
+                    frameIndex: frameIndex,
+                    animationTimeSeconds: animationTime,
+                    sourcePixelFormat: pixelFormat,
+                    width: currentWidth,
+                    height: currentHeight
+                )
+                previewCommandBuffer.commit()
+            }
             frameIndex += 1
         } catch {
             setError("Publish failed: \(error)")

@@ -73,7 +73,7 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
     private var controlPlane: Syphon26ControlPlane?
     private var client: Syphon26Client?
     private var streams: [Syphon26StreamDescription] = []
-    private var pollTimer: Timer?
+    private var pollTimer: (any DispatchSourceTimer)?
     private var metricsTimer: Timer?
     private var streamRefreshTimer: Timer?
     private var observedFrames: UInt64 = 0
@@ -357,7 +357,7 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func disconnect() {
-        pollTimer?.invalidate()
+        pollTimer?.cancel()
         metricsTimer?.invalidate()
         pollTimer = nil
         metricsTimer = nil
@@ -376,12 +376,19 @@ private final class ClientAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startTimers() {
-        let pollTimer = Timer(timeInterval: 1.0 / 120.0, repeats: true) { [weak self] _ in
+        let interval = 1.0 / 120.0
+        let pollTimer = DispatchSource.makeTimerSource(queue: .main)
+        pollTimer.schedule(
+            deadline: .now(),
+            repeating: .nanoseconds(Int((interval * 1_000_000_000).rounded())),
+            leeway: .nanoseconds(0)
+        )
+        pollTimer.setEventHandler { [weak self] in
             Task { @MainActor [weak self] in
                 self?.pollFrame()
             }
         }
-        RunLoop.main.add(pollTimer, forMode: .common)
+        pollTimer.resume()
         self.pollTimer = pollTimer
 
         let metricsTimer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in

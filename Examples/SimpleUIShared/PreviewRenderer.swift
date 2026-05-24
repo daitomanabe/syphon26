@@ -1,6 +1,7 @@
 import AppKit
 import Metal
 import MetalKit
+import QuartzCore
 
 public enum Syphon26PreviewRendererError: Error {
     case missingFunction(String)
@@ -9,6 +10,7 @@ public enum Syphon26PreviewRendererError: Error {
 
 private struct PatternUniforms {
     var frame: Float
+    var timeSeconds: Float
     var formatMode: Float
     var width: Float
     var height: Float
@@ -41,10 +43,15 @@ public final class Syphon26PreviewRenderer {
         view.colorPixelFormat = .bgra8Unorm
         view.clearColor = MTLClearColor(red: 0.03, green: 0.03, blue: 0.035, alpha: 1.0)
         view.framebufferOnly = true
+        view.preferredFramesPerSecond = 120
         view.enableSetNeedsDisplay = false
         view.isPaused = true
         view.autoResizeDrawable = true
         view.wantsLayer = true
+        if let metalLayer = view.layer as? CAMetalLayer {
+            metalLayer.presentsWithTransaction = false
+            metalLayer.displaySyncEnabled = true
+        }
         view.layer?.cornerRadius = 6
         view.layer?.masksToBounds = true
         view.layer?.borderWidth = 1
@@ -56,6 +63,7 @@ public final class Syphon26PreviewRenderer {
         into texture: any MTLTexture,
         commandBuffer: any MTLCommandBuffer,
         frameIndex: Int,
+        animationTimeSeconds: Double,
         sourcePixelFormat: MTLPixelFormat
     ) throws -> Bool {
         let descriptor = MTLRenderPassDescriptor()
@@ -71,6 +79,7 @@ public final class Syphon26PreviewRenderer {
             commandBuffer: commandBuffer,
             colorPixelFormat: texture.pixelFormat,
             frameIndex: frameIndex,
+            animationTimeSeconds: animationTimeSeconds,
             sourcePixelFormat: sourcePixelFormat,
             width: texture.width,
             height: texture.height
@@ -84,6 +93,7 @@ public final class Syphon26PreviewRenderer {
         to view: MTKView,
         commandBuffer: any MTLCommandBuffer,
         frameIndex: Int,
+        animationTimeSeconds: Double,
         sourcePixelFormat: MTLPixelFormat,
         width: Int,
         height: Int
@@ -97,6 +107,7 @@ public final class Syphon26PreviewRenderer {
             commandBuffer: commandBuffer,
             colorPixelFormat: view.colorPixelFormat,
             frameIndex: frameIndex,
+            animationTimeSeconds: animationTimeSeconds,
             sourcePixelFormat: sourcePixelFormat,
             width: width,
             height: height
@@ -147,6 +158,7 @@ public final class Syphon26PreviewRenderer {
         commandBuffer: any MTLCommandBuffer,
         colorPixelFormat: MTLPixelFormat,
         frameIndex: Int,
+        animationTimeSeconds: Double,
         sourcePixelFormat: MTLPixelFormat,
         width: Int,
         height: Int
@@ -157,6 +169,7 @@ public final class Syphon26PreviewRenderer {
         }
         var uniforms = PatternUniforms(
             frame: Float(frameIndex),
+            timeSeconds: Float(animationTimeSeconds),
             formatMode: sourcePixelFormat == .rgba16Float ? 1.0 : 0.0,
             width: Float(width),
             height: Float(height)
@@ -208,6 +221,7 @@ public final class Syphon26PreviewRenderer {
 
     struct PatternUniforms {
         float frame;
+        float timeSeconds;
         float formatMode;
         float width;
         float height;
@@ -283,12 +297,13 @@ public final class Syphon26PreviewRenderer {
         float center = max(centerX, centerY);
         color = mix(color, float3(0.92, 0.92, 0.94), center * 0.45);
 
-        float scanPhase = fract(u.frame / 360.0);
-        float scanPingPong = 1.0 - abs(scanPhase * 2.0 - 1.0);
+        float scanPhase = fract(u.timeSeconds / 6.0);
+        float scanAngle = scanPhase * 6.28318530718;
+        float scanPingPong = 0.5 - 0.5 * cos(scanAngle);
         float markerX = 0.08 + scanPingPong * 0.84;
         float scanArea = rectMask(uv, float2(0.05, 0.05), float2(0.95, 0.95));
         float markerGlow = lineMask(uv.x, markerX, 0.105) * scanArea;
-        float trailDirection = mix(-1.0, 1.0, step(0.5, scanPhase));
+        float trailDirection = sin(scanAngle) >= 0.0 ? -1.0 : 1.0;
         float markerTrailA = lineMask(uv.x, markerX + trailDirection * 0.055, 0.035) * scanArea;
         float markerTrailB = lineMask(uv.x, markerX + trailDirection * 0.105, 0.025) * scanArea;
         float markerCore = lineMask(uv.x, markerX, 0.030) * scanArea;
@@ -301,10 +316,10 @@ public final class Syphon26PreviewRenderer {
         float cursorBottom = rectMask(uv, float2(markerX - 0.035, 0.895), float2(markerX + 0.035, 0.950));
         color = mix(color, float3(1.0, 0.95, 0.10), max(cursorTop, cursorBottom));
 
-        float framePulse = 0.5 + 0.5 * sin(u.frame * 0.21);
+        float framePulse = 0.5 + 0.5 * sin(u.timeSeconds * 12.56637061436);
         color = mix(color, float3(framePulse, 1.0 - framePulse, 1.0), rectMask(uv, float2(0.43, 0.68), float2(0.57, 0.82)));
 
-        float diagonal = fract((uv.x + uv.y + u.frame * 0.01) * 8.0);
+        float diagonal = fract((uv.x + uv.y + u.timeSeconds * 1.2) * 8.0);
         float3 floatPattern = float3(uv.x * uv.x, sqrt(uv.y), diagonal);
         color = mix(color, floatPattern, 0.32 * step(0.5, u.formatMode));
 
