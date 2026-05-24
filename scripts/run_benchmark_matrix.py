@@ -31,6 +31,8 @@ def parse_args():
     parser.add_argument("--clients", default="1")
     parser.add_argument("--sync", default="sequence-polling")
     parser.add_argument("--warmup", type=float, default=0.5)
+    parser.add_argument("--slow-consumer-ms", type=float, default=0.0)
+    parser.add_argument("--client-poll-us", type=int, default=0)
     parser.add_argument("--output", default="benchmark-results/matrix")
     parser.add_argument("--configuration", default="release", choices=["debug", "release"])
     return parser.parse_args()
@@ -55,8 +57,13 @@ def extract_json(stdout):
     return json.loads(stdout[start : end + 1])
 
 
-def run_one(repo_root, output_root, matrix_name, matrix, clients, sync, warmup, configuration):
-    run_output = output_root / f"{matrix_name}-c{clients}-{sync}"
+def run_one(repo_root, output_root, matrix_name, matrix, clients, sync, warmup, slow_consumer_ms, client_poll_us, configuration):
+    suffix = f"{matrix_name}-c{clients}-{sync}"
+    if slow_consumer_ms > 0:
+        suffix += f"-slow{slow_consumer_ms:g}ms"
+    if client_poll_us > 0:
+        suffix += f"-poll{client_poll_us}us"
+    run_output = output_root / suffix
     command = [
         "swift",
         "run",
@@ -81,6 +88,10 @@ def run_one(repo_root, output_root, matrix_name, matrix, clients, sync, warmup, 
             str(clients),
             "--sync",
             sync,
+            "--slow-consumer-ms",
+            str(slow_consumer_ms),
+            "--client-poll-us",
+            str(client_poll_us),
             "--output",
             str(run_output),
         ]
@@ -149,7 +160,18 @@ def main():
     for matrix_name in selected:
         matrix = MATRICES[matrix_name]
         for clients in client_counts:
-            summary = run_one(repo_root, output_root, matrix_name, matrix, clients, args.sync, args.warmup, args.configuration)
+            summary = run_one(
+                repo_root,
+                output_root,
+                matrix_name,
+                matrix,
+                clients,
+                args.sync,
+                args.warmup,
+                args.slow_consumer_ms,
+                args.client_poll_us,
+                args.configuration,
+            )
             summary["comparison"] = compare(summary)
             runs.append(summary)
 
@@ -157,6 +179,8 @@ def main():
         "createdAt": datetime.now().isoformat(timespec="seconds"),
         "sync": args.sync,
         "configuration": args.configuration,
+        "slowConsumerMilliseconds": args.slow_consumer_ms,
+        "clientPollMicroseconds": args.client_poll_us,
         "runs": runs,
     }
     (output_root / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True))

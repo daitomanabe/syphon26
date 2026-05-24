@@ -47,7 +47,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [x] Implement triple-buffered IOSurface-backed slots.
 - [x] Support configurable slot count.
 - [x] Implement latest-frame consumption semantics.
-- [ ] Track slow consumers without blocking the producer.
+- [x] Track slow consumers without blocking the producer.
 - [ ] Add all-slots-busy policy for latest-frame mode.
 
 ## Control Plane

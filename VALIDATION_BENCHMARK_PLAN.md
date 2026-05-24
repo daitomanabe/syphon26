@@ -235,6 +235,8 @@ The Syphon26 matrix helper is:
 
 ```sh
 python3 scripts/run_benchmark_matrix.py --matrix 1080p60,4k60,4k120,1080pmax,4kmax --clients 1 --sync sequence-polling --configuration release
+python3 scripts/run_benchmark_matrix.py --matrix 1080p60 --clients 1,2,4,8,16 --sync sequence-polling --configuration release
+python3 scripts/run_benchmark_matrix.py --matrix 1080pmax --clients 1 --slow-consumer-ms 1 --client-poll-us 100 --sync sequence-polling --configuration release
 ```
 
 The final report must include:
