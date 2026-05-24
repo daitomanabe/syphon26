@@ -4,7 +4,7 @@ This is the ordered implementation queue after the native in-process transport M
 
 ## 1. Cross-process transport handoff
 
-- [ ] Add XPC payloads for IOSurface slot handoff.
+- [x] Add XPC payloads for IOSurface slot handoff.
 - [ ] Add XPC payloads for `MTLSharedEventHandle` handoff.
 - [ ] Recreate client-side Metal textures from received IOSurfaces.
 - [ ] Recreate client-side `MTLSharedEvent` from received handles.

@@ -1,3 +1,4 @@
+import IOSurface
 import Metal
 import Testing
 @testable import Syphon26
@@ -113,6 +114,48 @@ func xpcControlChannelRejectsMissingConsumerStream() throws {
     #expect(throws: Syphon26Error.streamNotFound) {
         _ = try client.registerConsumer(streamID: "missing")
     }
+}
+
+@Test
+func xpcControlChannelExchangesIOSurfaceSlots() throws {
+    let listener = Syphon26XPCControlListener()
+    listener.start()
+    defer { listener.stop() }
+
+    let client = Syphon26XPCControlClient(endpoint: listener.endpoint)
+    let description = Syphon26StreamDescription(
+        streamID: "xpc-iosurface-stream",
+        name: "XPC IOSurface Stream",
+        appName: "Tests",
+        processIdentifier: ProcessInfo.processInfo.processIdentifier,
+        width: 32,
+        height: 16,
+        pixelFormat: .bgra8Unorm,
+        colorPrimaries: .sRGB,
+        transferFunction: .sRGB,
+        alphaMode: .opaque,
+        slotCount: 2,
+        syncMode: .sequencePolling,
+        deliveryMode: .latest
+    )
+    let surfaces = try (0..<2).map { _ in
+        try #require(IOSurfaceCreate([
+            kIOSurfaceWidth: description.width,
+            kIOSurfaceHeight: description.height,
+            kIOSurfacePixelFormat: Syphon26PixelFormatSupport.cvPixelFormat(for: description.pixelFormat),
+            kIOSurfaceBytesPerElement: Syphon26PixelFormatSupport.bytesPerElement(for: description.pixelFormat)
+        ] as CFDictionary))
+    }
+
+    let registeredSlots = try client.registerProducerTransport(description, surfaces: surfaces)
+    #expect(registeredSlots.map(\.ioSurfaceID) == surfaces.map { IOSurfaceGetID($0) })
+
+    let receivedSlots = try client.copyIOSurfaceSlots(streamID: description.streamID)
+    #expect(receivedSlots.count == 2)
+    #expect(receivedSlots.map(\.descriptor.ioSurfaceID) == surfaces.map { IOSurfaceGetID($0) })
+    #expect(receivedSlots.map { IOSurfaceGetID($0.surface) } == surfaces.map { IOSurfaceGetID($0) })
+    #expect(receivedSlots.allSatisfy { $0.descriptor.width == description.width })
+    #expect(receivedSlots.allSatisfy { $0.descriptor.height == description.height })
 }
 
 @Test

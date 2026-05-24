@@ -54,7 +54,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 - [x] Add an XPC-based control channel.
 - [x] Exchange stream metadata over XPC.
-- [ ] Exchange IOSurface references or secure IOSurface handles over XPC.
+- [x] Exchange IOSurface references or secure IOSurface handles over XPC.
 - [ ] Exchange `MTLSharedEventHandle` over XPC.
 - [x] Add producer registration and retirement.
 - [x] Add consumer registration and retirement.

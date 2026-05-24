@@ -1,4 +1,5 @@
 import Foundation
+import IOSurface
 import Metal
 
 struct Syphon26XPCStreamDescription: Codable, Equatable, Sendable {
@@ -106,18 +107,60 @@ struct Syphon26XPCListStreamsResponse: Codable, Sendable {
     var streams: [Syphon26XPCStreamDescription]
 }
 
+struct Syphon26XPCIOSurfaceSlotDescriptor: Codable, Equatable, Sendable {
+    var slotIndex: Int
+    var ioSurfaceID: UInt32
+    var width: Int
+    var height: Int
+    var pixelFormatRawValue: UInt
+}
+
+struct Syphon26XPCProducerTransportRegistrationRequest: Codable, Sendable {
+    var stream: Syphon26XPCStreamDescription
+    var slots: [Syphon26XPCIOSurfaceSlotDescriptor]
+}
+
+struct Syphon26XPCProducerTransportRegistrationResponse: Codable, Sendable {
+    var stream: Syphon26XPCStreamDescription
+    var slots: [Syphon26XPCIOSurfaceSlotDescriptor]
+}
+
+struct Syphon26XPCIOSurfaceSlotRequest: Codable, Sendable {
+    var streamID: Syphon26StreamID
+}
+
+struct Syphon26XPCIOSurfaceSlotResponse: Codable, Sendable {
+    var slots: [Syphon26XPCIOSurfaceSlotDescriptor]
+}
+
+struct Syphon26XPCIOSurfaceSlot {
+    var descriptor: Syphon26XPCIOSurfaceSlotDescriptor
+    var surface: IOSurfaceRef
+}
+
 @objc(Syphon26XPCControlServicing)
 protocol Syphon26XPCControlServicing {
     func registerProducer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
+    func registerProducerTransport(
+        _ requestData: Data,
+        surfaces: NSArray,
+        withReply reply: @escaping (Data?, NSError?) -> Void
+    )
     func retireProducer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
     func registerConsumer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
     func retireConsumer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void)
+    func copyIOSurfaceSlots(
+        _ requestData: Data,
+        withReply reply: @escaping (Data?, NSArray?, NSError?) -> Void
+    )
     func listStreams(withReply reply: @escaping (Data?, NSError?) -> Void)
 }
 
 final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
     private let lock = NSLock()
     private var streams: [Syphon26StreamID: Syphon26XPCStreamDescription] = [:]
+    private var slotDescriptorsByStream: [Syphon26StreamID: [Syphon26XPCIOSurfaceSlotDescriptor]] = [:]
+    private var surfacesByStream: [Syphon26StreamID: [IOSurfaceRef]] = [:]
     private var consumersByStream: [Syphon26StreamID: Set<String>] = [:]
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -135,11 +178,49 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
         }
     }
 
+    func registerProducerTransport(
+        _ requestData: Data,
+        surfaces surfaceArray: NSArray,
+        withReply reply: @escaping (Data?, NSError?) -> Void
+    ) {
+        do {
+            let request = try decoder.decode(Syphon26XPCProducerTransportRegistrationRequest.self, from: requestData)
+            let surfaces = try Self.copySurfaces(from: surfaceArray)
+            guard surfaces.count == request.slots.count else {
+                reply(nil, nsError(Syphon26Error.invalidConfiguration))
+                return
+            }
+            for (surface, slot) in zip(surfaces, request.slots) {
+                guard IOSurfaceGetID(surface) == slot.ioSurfaceID else {
+                    reply(nil, nsError(Syphon26Error.ioSurfaceHandoffFailed))
+                    return
+                }
+            }
+
+            lock.lock()
+            streams[request.stream.streamID] = request.stream
+            slotDescriptorsByStream[request.stream.streamID] = request.slots
+            surfacesByStream[request.stream.streamID] = surfaces
+            consumersByStream[request.stream.streamID, default: []] = consumersByStream[request.stream.streamID, default: []]
+            lock.unlock()
+            try replyEncoded(
+                Syphon26XPCProducerTransportRegistrationResponse(stream: request.stream, slots: request.slots),
+                reply: reply
+            )
+        } catch let error as Syphon26Error {
+            reply(nil, nsError(error))
+        } catch {
+            reply(nil, nsError(Syphon26Error.invalidConfiguration))
+        }
+    }
+
     func retireProducer(_ requestData: Data, withReply reply: @escaping (Data?, NSError?) -> Void) {
         do {
             let request = try decoder.decode(Syphon26XPCProducerRetirementRequest.self, from: requestData)
             lock.lock()
             streams.removeValue(forKey: request.streamID)
+            slotDescriptorsByStream.removeValue(forKey: request.streamID)
+            surfacesByStream.removeValue(forKey: request.streamID)
             consumersByStream.removeValue(forKey: request.streamID)
             lock.unlock()
             reply(Data(), nil)
@@ -181,6 +262,29 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
         }
     }
 
+    func copyIOSurfaceSlots(
+        _ requestData: Data,
+        withReply reply: @escaping (Data?, NSArray?, NSError?) -> Void
+    ) {
+        do {
+            let request = try decoder.decode(Syphon26XPCIOSurfaceSlotRequest.self, from: requestData)
+            lock.lock()
+            guard let slots = slotDescriptorsByStream[request.streamID],
+                  let surfaces = surfacesByStream[request.streamID] else {
+                lock.unlock()
+                reply(nil, nil, nsError(Syphon26Error.streamNotFound))
+                return
+            }
+            lock.unlock()
+            let response = Syphon26XPCIOSurfaceSlotResponse(slots: slots)
+            reply(try encoder.encode(response), NSArray(array: surfaces), nil)
+        } catch let error as Syphon26Error {
+            reply(nil, nil, nsError(error))
+        } catch {
+            reply(nil, nil, nsError(Syphon26Error.invalidConfiguration))
+        }
+    }
+
     func listStreams(withReply reply: @escaping (Data?, NSError?) -> Void) {
         lock.lock()
         let response = Syphon26XPCListStreamsResponse(streams: streams.values.sorted { $0.name < $1.name })
@@ -198,6 +302,19 @@ final class Syphon26XPCControlService: NSObject, Syphon26XPCControlServicing {
 
     private func nsError(_ error: Syphon26Error) -> NSError {
         NSError(domain: Syphon26ErrorDomain, code: error.rawValue)
+    }
+
+    private static func copySurfaces(from surfaceArray: NSArray) throws -> [IOSurfaceRef] {
+        var surfaces: [IOSurfaceRef] = []
+        surfaces.reserveCapacity(surfaceArray.count)
+        for item in surfaceArray {
+            guard CFGetTypeID(item as CFTypeRef) == IOSurfaceGetTypeID() else {
+                throw Syphon26Error.ioSurfaceHandoffFailed
+            }
+            let surface = item as! IOSurfaceRef
+            surfaces.append(surface)
+        }
+        return surfaces
     }
 }
 
@@ -225,10 +342,29 @@ final class Syphon26XPCControlListener: NSObject, NSXPCListenerDelegate {
     }
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        newConnection.exportedInterface = NSXPCInterface(with: (any Syphon26XPCControlServicing).self)
+        let interface = Self.makeInterface()
+        newConnection.exportedInterface = interface
         newConnection.exportedObject = service
         newConnection.resume()
         return true
+    }
+
+    static func makeInterface() -> NSXPCInterface {
+        let interface = NSXPCInterface(with: (any Syphon26XPCControlServicing).self)
+        let surfaceClasses = NSSet(objects: NSArray.self, IOSurface.self) as! Set<AnyHashable>
+        interface.setClasses(
+            surfaceClasses,
+            for: #selector((any Syphon26XPCControlServicing).registerProducerTransport(_:surfaces:withReply:)),
+            argumentIndex: 1,
+            ofReply: false
+        )
+        interface.setClasses(
+            surfaceClasses,
+            for: #selector((any Syphon26XPCControlServicing).copyIOSurfaceSlots(_:withReply:)),
+            argumentIndex: 1,
+            ofReply: true
+        )
+        return interface
     }
 }
 
@@ -239,7 +375,7 @@ final class Syphon26XPCControlClient {
 
     init(endpoint: NSXPCListenerEndpoint) {
         self.connection = NSXPCConnection(listenerEndpoint: endpoint)
-        self.connection.remoteObjectInterface = NSXPCInterface(with: (any Syphon26XPCControlServicing).self)
+        self.connection.remoteObjectInterface = Syphon26XPCControlListener.makeInterface()
         self.connection.resume()
     }
 
@@ -255,6 +391,33 @@ final class Syphon26XPCControlClient {
         return try decoder.decode(Syphon26XPCProducerRegistrationResponse.self, from: responseData)
             .stream
             .makeDescription()
+    }
+
+    func registerProducerTransport(
+        _ description: Syphon26StreamDescription,
+        surfaces: [IOSurfaceRef]
+    ) throws -> [Syphon26XPCIOSurfaceSlotDescriptor] {
+        let slots = surfaces.enumerated().map { index, surface in
+            Syphon26XPCIOSurfaceSlotDescriptor(
+                slotIndex: index,
+                ioSurfaceID: IOSurfaceGetID(surface),
+                width: IOSurfaceGetWidth(surface),
+                height: IOSurfaceGetHeight(surface),
+                pixelFormatRawValue: description.pixelFormat.rawValue
+            )
+        }
+        let request = Syphon26XPCProducerTransportRegistrationRequest(
+            stream: Syphon26XPCStreamDescription(description: description),
+            slots: slots
+        )
+        let responseData = try perform { service, reply in
+            service.registerProducerTransport(
+                try encoder.encode(request),
+                surfaces: NSArray(array: surfaces),
+                withReply: reply
+            )
+        }
+        return try decoder.decode(Syphon26XPCProducerTransportRegistrationResponse.self, from: responseData).slots
     }
 
     func retireProducer(streamID: Syphon26StreamID) throws {
@@ -273,6 +436,21 @@ final class Syphon26XPCControlClient {
             service.registerConsumer(try encoder.encode(request), withReply: reply)
         }
         return try decoder.decode(Syphon26XPCConsumerRegistrationResponse.self, from: responseData)
+    }
+
+    func copyIOSurfaceSlots(streamID: Syphon26StreamID) throws -> [Syphon26XPCIOSurfaceSlot] {
+        let request = Syphon26XPCIOSurfaceSlotRequest(streamID: streamID)
+        let (responseData, surfaceArray) = try performSurfaceReply { service, reply in
+            service.copyIOSurfaceSlots(try encoder.encode(request), withReply: reply)
+        }
+        let response = try decoder.decode(Syphon26XPCIOSurfaceSlotResponse.self, from: responseData)
+        let surfaces = try Self.copySurfaces(from: surfaceArray)
+        guard surfaces.count == response.slots.count else {
+            throw Syphon26Error.ioSurfaceHandoffFailed
+        }
+        return zip(response.slots, surfaces).map { slot, surface in
+            Syphon26XPCIOSurfaceSlot(descriptor: slot, surface: surface)
+        }
     }
 
     func retireConsumer(streamID: Syphon26StreamID, consumerID: String) throws {
@@ -328,5 +506,62 @@ final class Syphon26XPCControlClient {
         let finalResult = result
         lock.unlock()
         return try finalResult?.get() ?? Data()
+    }
+
+    private func performSurfaceReply(
+        _ body: (
+            any Syphon26XPCControlServicing,
+            @escaping (Data?, NSArray?, NSError?) -> Void
+        ) throws -> Void
+    ) throws -> (Data, NSArray) {
+        let semaphore = DispatchSemaphore(value: 0)
+        let lock = NSLock()
+        var result: Result<(Data, NSArray), any Error>?
+
+        let proxy = connection.remoteObjectProxyWithErrorHandler { error in
+            lock.lock()
+            result = .failure(error)
+            lock.unlock()
+            semaphore.signal()
+        }
+
+        guard let service = proxy as? any Syphon26XPCControlServicing else {
+            throw Syphon26Error.xpcConnectionFailed
+        }
+
+        try body(service) { data, surfaces, error in
+            lock.lock()
+            if let error {
+                result = .failure(Syphon26Error(rawValue: error.code) ?? Syphon26Error.xpcConnectionFailed)
+            } else if let data, let surfaces {
+                result = .success((data, surfaces))
+            } else {
+                result = .failure(Syphon26Error.ioSurfaceHandoffFailed)
+            }
+            lock.unlock()
+            semaphore.signal()
+        }
+
+        guard semaphore.wait(timeout: .now() + 2) == .success else {
+            throw Syphon26Error.timeout
+        }
+
+        lock.lock()
+        let finalResult = result
+        lock.unlock()
+        return try finalResult?.get() ?? (Data(), NSArray())
+    }
+
+    private static func copySurfaces(from surfaceArray: NSArray) throws -> [IOSurfaceRef] {
+        var surfaces: [IOSurfaceRef] = []
+        surfaces.reserveCapacity(surfaceArray.count)
+        for item in surfaceArray {
+            guard CFGetTypeID(item as CFTypeRef) == IOSurfaceGetTypeID() else {
+                throw Syphon26Error.ioSurfaceHandoffFailed
+            }
+            let surface = item as! IOSurfaceRef
+            surfaces.append(surface)
+        }
+        return surfaces
     }
 }
