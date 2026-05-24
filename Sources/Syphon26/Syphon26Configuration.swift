@@ -72,7 +72,7 @@ public struct Syphon26ClientConfiguration: Sendable {
         streamDescription: Syphon26StreamDescription? = nil,
         syncMode: Syphon26SyncMode = .automatic,
         deliveryMode: Syphon26DeliveryMode = .latest,
-        preferredPixelFormats: [MTLPixelFormat] = [.bgra8Unorm, .bgra8Unorm_srgb],
+        preferredPixelFormats: [MTLPixelFormat] = [.bgra8Unorm, .bgra8Unorm_srgb, .rgba16Float],
         allowsFallbacks: Bool = true,
         maximumFrameWaitNanoseconds: UInt64 = 0
     ) {
@@ -86,4 +86,3 @@ public struct Syphon26ClientConfiguration: Sendable {
         self.maximumFrameWaitNanoseconds = maximumFrameWaitNanoseconds
     }
 }
-

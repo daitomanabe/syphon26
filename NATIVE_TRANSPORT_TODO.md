@@ -75,12 +75,12 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 
 ## Format Support
 
-- [ ] Implement BGRA8 first.
-- [ ] Add RGBA16F after BGRA8 is stable.
-- [ ] Store color primaries metadata.
-- [ ] Store transfer function metadata.
-- [ ] Store alpha mode metadata.
-- [ ] Reject unsupported pixel formats explicitly.
+- [x] Implement BGRA8 first.
+- [x] Add RGBA16F after BGRA8 is stable.
+- [x] Store color primaries metadata.
+- [x] Store transfer function metadata.
+- [x] Store alpha mode metadata.
+- [x] Reject unsupported pixel formats explicitly.
 - [ ] Defer NV12/P010 multi-plane support until a real pipeline requires it.
 
 ## Diagnostics
@@ -103,8 +103,8 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [ ] Add a minimal Metal producer app.
 - [ ] Add a minimal Metal consumer app.
 - [x] Add a multi-consumer benchmark runner.
-- [ ] Add a slow-consumer benchmark mode.
-- [ ] Add an RGBA16F benchmark mode after format support lands.
+- [x] Add a slow-consumer benchmark mode.
+- [x] Add an RGBA16F benchmark mode after format support lands.
 
 ## Benchmark Gates
 

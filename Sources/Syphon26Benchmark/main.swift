@@ -12,6 +12,7 @@ struct BenchmarkOptions {
     var outputDirectory = "benchmark-results"
     var name = "Syphon26Benchmark"
     var syncMode = Syphon26SyncMode.sequencePolling
+    var pixelFormat = MTLPixelFormat.bgra8Unorm
     var renderMode = RenderMode.clear
     var slowConsumerMilliseconds = 0.0
     var clientPollMicroseconds = 0
@@ -48,6 +49,8 @@ struct BenchmarkOptions {
                 options.name = try value()
             case "--sync":
                 options.syncMode = try parseSyncMode(value())
+            case "--pixel-format":
+                options.pixelFormat = try parsePixelFormat(value())
             case "--render":
                 options.renderMode = try parseRenderMode(value())
             case "--slow-consumer-ms":
@@ -62,6 +65,32 @@ struct BenchmarkOptions {
             index += 1
         }
         return options
+    }
+}
+
+func parsePixelFormat(_ value: String) throws -> MTLPixelFormat {
+    switch value.lowercased() {
+    case "bgra8", "bgra8unorm":
+        .bgra8Unorm
+    case "bgra8-srgb", "bgra8unorm-srgb", "bgra8unorm_srgb":
+        .bgra8Unorm_srgb
+    case "rgba16f", "rgba16float":
+        .rgba16Float
+    default:
+        throw BenchmarkCLIError.unknownArgument("--pixel-format \(value)")
+    }
+}
+
+func pixelFormatName(_ pixelFormat: MTLPixelFormat) -> String {
+    switch pixelFormat {
+    case .bgra8Unorm:
+        "bgra8"
+    case .bgra8Unorm_srgb:
+        "bgra8-srgb"
+    case .rgba16Float:
+        "rgba16f"
+    default:
+        "unknown-\(pixelFormat.rawValue)"
     }
 }
 
@@ -125,6 +154,7 @@ struct BenchmarkManifest: Codable {
     var slowConsumerMilliseconds: Double
     var clientPollMicroseconds: Int
     var syncMode: String
+    var pixelFormat: String
     var fallbackReason: String
 }
 
@@ -140,6 +170,7 @@ func printHelpAndExit() -> Never {
       --duration <seconds>   Default: 3
       --clients <count>      Default: 1
       --sync <mode>          sequence-polling, shared-event, automatic. Default: sequence-polling
+      --pixel-format <fmt>   bgra8, bgra8-srgb, or rgba16f. Default: bgra8
       --render <mode>        clear or none. Default: clear
       --slow-consumer-ms <n> Sleep after each observed client frame. Default: 0
       --client-poll-us <n>   Sleep after empty client polls. Default: 0
@@ -166,7 +197,7 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
             device: device,
             width: options.width,
             height: options.height,
-            pixelFormat: .bgra8Unorm,
+            pixelFormat: options.pixelFormat,
             syncMode: options.syncMode
         )
     )
@@ -253,6 +284,7 @@ func runBenchmark(options: BenchmarkOptions) throws -> BenchmarkManifest {
         slowConsumerMilliseconds: options.slowConsumerMilliseconds,
         clientPollMicroseconds: options.clientPollMicroseconds,
         syncMode: serverDiagnostics.syncMode.rawValue,
+        pixelFormat: pixelFormatName(options.pixelFormat),
         fallbackReason: serverDiagnostics.fallbackReason.rawValue
     )
 }

@@ -62,6 +62,38 @@ func clientReceivesPresentedDrawable() throws {
 }
 
 @Test
+func rgba16FloatStreamCanPublishAndReceive() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let queue = try #require(device.makeCommandQueue())
+    let configuration = Syphon26ServerConfiguration(
+        name: "RGBA16F Stream",
+        device: device,
+        width: 64,
+        height: 64,
+        pixelFormat: .rgba16Float
+    )
+    let server = try Syphon26Server(configuration: configuration)
+    try server.start()
+    defer { server.stop() }
+
+    let client = try Syphon26Client(streamDescription: server.streamDescription, device: device)
+    try client.start()
+    defer { client.stop() }
+
+    let drawable = try server.acquireDrawable()
+    #expect(drawable.pixelFormat == .rgba16Float)
+    let commandBuffer = try #require(queue.makeCommandBuffer())
+    try server.presentDrawable(drawable, commandBuffer: commandBuffer)
+    commandBuffer.commit()
+    commandBuffer.waitUntilCompleted()
+
+    let frame = try #require(try client.copyLatestFrame())
+    #expect(frame.texture.pixelFormat == .rgba16Float)
+    #expect(frame.pixelFormat == .rgba16Float)
+    #expect(frame.sequence == 1)
+}
+
+@Test
 func lifecycleCallsAreIdempotent() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let configuration = Syphon26ServerConfiguration(name: "Lifecycle Stream", device: device, width: 64, height: 64)

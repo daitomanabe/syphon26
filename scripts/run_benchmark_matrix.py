@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument("--matrix", default="1080p60,4k60,4k120,1080pmax,4kmax")
     parser.add_argument("--clients", default="1")
     parser.add_argument("--sync", default="sequence-polling")
+    parser.add_argument("--pixel-format", default="bgra8", choices=["bgra8", "bgra8-srgb", "rgba16f"])
     parser.add_argument("--warmup", type=float, default=0.5)
     parser.add_argument("--slow-consumer-ms", type=float, default=0.0)
     parser.add_argument("--client-poll-us", type=int, default=0)
@@ -57,8 +58,20 @@ def extract_json(stdout):
     return json.loads(stdout[start : end + 1])
 
 
-def run_one(repo_root, output_root, matrix_name, matrix, clients, sync, warmup, slow_consumer_ms, client_poll_us, configuration):
-    suffix = f"{matrix_name}-c{clients}-{sync}"
+def run_one(
+    repo_root,
+    output_root,
+    matrix_name,
+    matrix,
+    clients,
+    sync,
+    pixel_format,
+    warmup,
+    slow_consumer_ms,
+    client_poll_us,
+    configuration,
+):
+    suffix = f"{matrix_name}-{pixel_format}-c{clients}-{sync}"
     if slow_consumer_ms > 0:
         suffix += f"-slow{slow_consumer_ms:g}ms"
     if client_poll_us > 0:
@@ -88,6 +101,8 @@ def run_one(repo_root, output_root, matrix_name, matrix, clients, sync, warmup, 
             str(clients),
             "--sync",
             sync,
+            "--pixel-format",
+            pixel_format,
             "--slow-consumer-ms",
             str(slow_consumer_ms),
             "--client-poll-us",
@@ -104,6 +119,8 @@ def run_one(repo_root, output_root, matrix_name, matrix, clients, sync, warmup, 
 
 
 def compare(summary):
+    if summary.get("pixelFormat") != "bgra8":
+        return None
     baseline = CLASSIC_SYPHON_BASELINE.get(summary["matrix"])
     if not baseline:
         return None
@@ -130,8 +147,8 @@ def write_markdown(manifest, output_root):
         "",
         f"Created: `{manifest['createdAt']}`",
         "",
-        "| Matrix | Clients | Sync | Syphon26 FPS | Classic Syphon FPS | Result |",
-        "| --- | ---: | --- | ---: | ---: | ---: |",
+        "| Matrix | Format | Clients | Sync | Syphon26 FPS | Classic Syphon FPS | Result |",
+        "| --- | --- | ---: | --- | ---: | ---: | ---: |",
     ]
     for run in manifest["runs"]:
         comparison = run.get("comparison") or {}
@@ -142,7 +159,7 @@ def write_markdown(manifest, output_root):
         else:
             result = "n/a"
         lines.append(
-            f"| {run['matrix']} | {run['clients']} | {run['syncMode']} | "
+            f"| {run['matrix']} | {run['pixelFormat']} | {run['clients']} | {run['syncMode']} | "
             f"{run['minClientFPS']:.2f} | {comparison.get('classicSyphonClientFPS', 0):.2f} | {result} |"
         )
     (output_root / "summary.md").write_text("\n".join(lines) + "\n")
@@ -167,6 +184,7 @@ def main():
                 matrix,
                 clients,
                 args.sync,
+                args.pixel_format,
                 args.warmup,
                 args.slow_consumer_ms,
                 args.client_poll_us,
@@ -178,6 +196,7 @@ def main():
     manifest = {
         "createdAt": datetime.now().isoformat(timespec="seconds"),
         "sync": args.sync,
+        "pixelFormat": args.pixel_format,
         "configuration": args.configuration,
         "slowConsumerMilliseconds": args.slow_consumer_ms,
         "clientPollMicroseconds": args.client_poll_us,
