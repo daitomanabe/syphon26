@@ -44,6 +44,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
     }
 
     func acquireDrawable() throws -> Syphon26ServerDrawable {
+        Syphon26Signposts.acquire()
         lock.lock()
         let slotIndex = nextSlotIndex
         nextSlotIndex = (nextSlotIndex + 1) % slots.count
@@ -120,6 +121,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
             lock.unlock()
             return nil
         }
+        Syphon26Signposts.consume()
         let slot = slots[currentSlotIndex]
         let streamDescription = description
         lock.unlock()
@@ -173,6 +175,7 @@ final class Syphon26TransportStream: @unchecked Sendable {
         metadata: [String: Syphon26MetadataValue]
     ) {
         lock.lock()
+        Syphon26Signposts.publish()
         sequence += 1
         slots[slotIndex].sequence = sequence
         slots[slotIndex].timestamp = timestamp

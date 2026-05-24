@@ -50,6 +50,7 @@ public final class Syphon26Frame: @unchecked Sendable {
         guard let sharedEvent else {
             return
         }
+        Syphon26Signposts.wait()
         commandBuffer.encodeWaitForEvent(sharedEvent, value: sharedEventValue)
         waitDidEncode?()
     }

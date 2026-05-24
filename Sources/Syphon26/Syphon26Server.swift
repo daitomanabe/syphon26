@@ -74,6 +74,7 @@ public final class Syphon26Server: @unchecked Sendable {
         guard isRunning else {
             return
         }
+        Syphon26Signposts.retire()
         Syphon26TransportRegistry.shared.unregister(streamID: streamID)
         transportStream = nil
         isRunning = false

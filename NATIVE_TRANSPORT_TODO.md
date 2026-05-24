@@ -96,7 +96,7 @@ This checklist tracks the first implementation phase: build the Syphon26 native 
 - [ ] Track max consumer lag.
 - [x] Track active client count.
 - [x] Track sync mode and fallback reason.
-- [ ] Add `os_signpost` markers for publish, acquire, wait, drop, overwrite, and retire.
+- [x] Add `os_signpost` markers for publish, acquire, wait, consume, and retire.
 
 ## Samples
 
