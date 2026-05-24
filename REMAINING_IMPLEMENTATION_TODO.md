@@ -6,8 +6,8 @@ This is the ordered implementation queue after the native in-process transport M
 
 - [x] Add XPC payloads for IOSurface slot handoff.
 - [x] Add XPC payloads for `MTLSharedEventHandle` handoff.
-- [ ] Recreate client-side Metal textures from received IOSurfaces.
-- [ ] Recreate client-side `MTLSharedEvent` from received handles.
+- [x] Recreate client-side Metal textures from received IOSurfaces.
+- [x] Recreate client-side `MTLSharedEvent` from received handles.
 - [ ] Route `Syphon26Server.start()` through the control plane when cross-process mode is enabled.
 - [ ] Route `Syphon26Client.start()` through the control plane when attaching by stream ID.
 - [ ] Validate one producer and one consumer through the XPC transport path.

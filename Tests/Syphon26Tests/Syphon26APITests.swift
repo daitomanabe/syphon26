@@ -118,6 +118,7 @@ func xpcControlChannelRejectsMissingConsumerStream() throws {
 
 @Test
 func xpcControlChannelExchangesIOSurfaceSlots() throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
     let listener = Syphon26XPCControlListener()
     listener.start()
     defer { listener.stop() }
@@ -156,6 +157,12 @@ func xpcControlChannelExchangesIOSurfaceSlots() throws {
     #expect(receivedSlots.map { IOSurfaceGetID($0.surface) } == surfaces.map { IOSurfaceGetID($0) })
     #expect(receivedSlots.allSatisfy { $0.descriptor.width == description.width })
     #expect(receivedSlots.allSatisfy { $0.descriptor.height == description.height })
+
+    let resolvedSlots = try Syphon26XPCTransportResolver.makeTextures(from: receivedSlots, device: device)
+    #expect(resolvedSlots.count == 2)
+    #expect(resolvedSlots.allSatisfy { $0.texture.width == description.width })
+    #expect(resolvedSlots.allSatisfy { $0.texture.height == description.height })
+    #expect(resolvedSlots.allSatisfy { $0.texture.pixelFormat == description.pixelFormat })
 }
 
 @Test
@@ -197,7 +204,10 @@ func xpcControlChannelExchangesSharedEventHandle() throws {
     )
 
     let receivedHandle = try #require(try client.copySharedEventHandle(streamID: description.streamID))
-    let recreatedEvent = try #require(device.makeSharedEvent(handle: receivedHandle))
+    let recreatedEvent = try #require(try Syphon26XPCTransportResolver.makeSharedEvent(
+        from: receivedHandle,
+        device: device
+    ))
     #expect(recreatedEvent.signaledValue == sharedEvent.signaledValue)
 }
 
