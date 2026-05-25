@@ -4,6 +4,20 @@ Syphon26 v2 is a clean-room restart of Syphon26: a modern macOS frame-sharing tr
 
 The previous implementation is preserved on the `v1` branch. This branch intentionally starts from a minimal package so the transport, API, validation, and sample applications can be rebuilt without carrying over hidden assumptions from the first prototype.
 
+## Goal-Based Development
+
+This branch uses a control layer before product code is written:
+
+- [AGENTS.md](AGENTS.md): repository rules for future agent work.
+- [PLAN.md](PLAN.md): phased development plan.
+- [GOALS.md](GOALS.md): copyable bounded goals with allowed edit paths.
+- [ACCEPTANCE.md](ACCEPTANCE.md): checkable phase acceptance criteria.
+- [docs/specification.md](docs/specification.md): project-specific transport specification.
+- [docs/development_plan.md](docs/development_plan.md): execution strategy and milestones.
+- [docs/test_data.md](docs/test_data.md): deterministic fixture and benchmark data plan.
+
+Start future implementation by running only one goal from `GOALS.md`.
+
 ## Direction
 
 - Metal-first producer and consumer APIs.
