@@ -19,6 +19,13 @@ Define deterministic fixtures, generated textures, expected metadata, and benchm
 - RGBA16F gradient with known value ranges.
 - Frame index marker pattern for dropped-frame detection.
 
+Phase 2 implements the first two Metal fixtures in `fixtures/metal/README.md`:
+
+- `bgra8ColorBars`: four deterministic color bars for `bgra8Unorm`.
+- `rgba16FloatGradient`: exact half-float-friendly gradient values for `rgba16Float`.
+
+The validation path is GPU-oriented: a compute pass writes the texture and a second compute pass samples it to produce a checksum and pixel count. Tests read only those scalar validation buffers, not the full frame texture.
+
 ### Transport Fixtures
 
 - Ring metadata examples for empty, published, overwritten, and retired slots.
