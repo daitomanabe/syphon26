@@ -57,6 +57,23 @@ Phase 1 should define the public shape before runtime transport:
 
 The first API surface must make XPC/control-plane failures explicit enough that an app can show useful status instead of a generic connection failure.
 
+## Phase 1 API Contract
+
+The v2 API contract starts with validation-only types. Constructing a server or client configuration should fail before any Metal, IOSurface, XPC, or launchd resource is touched.
+
+Baseline public types:
+
+- `Syphon26PixelFormat`: supported formats are `bgra8Unorm` and `rgba16Float`; unsupported values are representable so validation can reject them explicitly.
+- `Syphon26FrameSize`: validated width and height.
+- `Syphon26StreamID`: validated stream identifier.
+- `Syphon26ServerConfiguration`: stream name, optional app name, dimensions, pixel format, buffer count, sync mode, and control-plane service name.
+- `Syphon26ClientConfiguration`: stream ID, preferred pixel formats, and control-plane service name.
+- `Syphon26StreamDescription`: directory-visible metadata for a published stream.
+- `Syphon26DiagnosticsSnapshot`: lifecycle, control-plane state, sync state, frame counters, and XPC failure counters.
+- `Syphon26Error`: distinct categories for validation, Metal, IOSurface, control-plane, XPC connection, synchronization, and lifecycle failures.
+
+Control-plane service names use a reverse-DNS style form such as `com.syphon26.control-plane`. A generic `xpc connection failed` message is not sufficient for v2 diagnostics; errors and diagnostics must preserve the service name and failure class.
+
 ## Non Goals
 
 - Classic Syphon bridge in the core transport.

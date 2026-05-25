@@ -16,6 +16,8 @@ Create `AGENTS.md`, `PLAN.md`, `GOALS.md`, `ACCEPTANCE.md`, and project docs bef
 
 Define configuration, metadata, diagnostics, and errors with validation tests.
 
+Phase 1 stops at construction-time validation. It intentionally does not allocate Metal devices, IOSurfaces, XPC connections, launchd services, sample apps, or preview surfaces. The goal is to make invalid inputs and future runtime failure classes explicit before implementation has side effects.
+
 ### M3: Metal Validation
 
 Validate deterministic in-process Metal texture behavior independent of cross-process sharing.
