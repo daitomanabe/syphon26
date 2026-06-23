@@ -19,7 +19,7 @@ Do not cut a release until each item is checked from source-of-truth commands.
 - Public v2-vs-classic Syphon benchmark claims are omitted unless `publicClassicClaimStatus` is `ready`.
 - Production XPC benchmark claims are omitted unless `productionXPCClaimStatus` is `ready`.
 - Public benchmark wording names the measured v2 file-backed app-to-app path or the measured v2 launchd Mach XPC path explicitly.
-- 8K/16K v2-vs-classic wording is omitted until matching same-session classic benchmark rows exist.
+- 8K/16K v2-vs-classic wording is omitted unless matching same-session classic benchmark rows are included and `productionXPCClaimStatus` is `ready`.
 - AppKit preview windows are verified as passive and non-key/non-main.
 - No core target imports, links, or bundles `Syphon.framework`.
 - No transport path uses CPU texture readback, screen capture, window capture, or preview capture.

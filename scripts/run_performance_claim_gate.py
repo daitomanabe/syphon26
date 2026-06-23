@@ -34,6 +34,10 @@ CLASSIC_SCRIPT_MATRICES = {
     "1080pmax",
     "4k60",
     "4kmax",
+    "8k60",
+    "8kmax",
+    "16k60",
+    "16kmax",
 }
 
 
@@ -915,7 +919,7 @@ def main():
             "Public classic performance claims use the v2 app-to-app benchmark row and require matching process scope, resolution, pixel format, FPS target, render mode, and display state.",
             "The file-backed v2 public-ready row remains scoped to the development app-to-app benchmark path.",
             "Production XPC claims require the v2 production XPC row to report app-to-app launchd-mach-xpc control plane and iosurface-xpc-object handle transport.",
-            "Classic Syphon 8K/16K rows remain blocked until the sibling classic benchmark runner defines matching 8K/16K matrix names or an equivalent same-session classic run is provided.",
+            "8K/16K rows require the sibling classic benchmark runner to define matching matrix names and complete same-session classic runs.",
             "Fixed-FPS rows are stability evidence. Throughput rows with fpsTarget 0 are speed evidence.",
             "Reports under benchmark-reports are generated artifacts and are intentionally not committed.",
         ],

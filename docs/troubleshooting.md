@@ -74,6 +74,14 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_production_
 
 These rows validate Syphon26 production XPC allocation and app-to-app exchange. They are not v2-vs-classic claims unless a same-session classic benchmark row exists for the same matrix.
 
+For 8K/16K claim-gated comparisons, run:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 8k60,16k60,8kmax,16kmax --duration 1 --warmup 0.25 --require-production-xpc-claim
+```
+
+Expected output includes `productionXPCClaimStatus: ready` when both the production XPC rows and matching classic Syphon rows complete.
+
 For claim-gated comparisons, run:
 
 ```bash

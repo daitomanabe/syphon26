@@ -194,7 +194,7 @@ The claim gate separates internal and public statements:
 - `productionXPCClaimStatus: ready` is required before making any production XPC v2-vs-classic Syphon benchmark claim.
 - Public-ready wording must name either the measured v2 file-backed app-to-app benchmark path or the measured v2 launchd Mach XPC path with IOSurface XPC object handoff.
 - If the v2 production XPC row is missing, not shape-compatible with the classic Syphon app-to-app row, or does not report `controlPlane: launchd-mach-xpc` and `handleTransport: iosurface-xpc-object`, the gate must report `productionXPCClaimStatus: blocked` or `partial` and the blocker text must be used instead of a speed claim.
-- 8K/16K production XPC rows can be reported as Syphon26 measurements when producer/client artifacts pass. 8K/16K v2-vs-classic claims remain blocked until the classic benchmark runner supplies matching rows in the same session.
+- 8K/16K production XPC rows can be reported as Syphon26 measurements when producer/client artifacts pass. 8K/16K v2-vs-classic claims require matching same-session classic rows.
 
 ## Non Goals
 

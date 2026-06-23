@@ -699,7 +699,7 @@ git diff --check
 
 ### Stop Condition
 
-Stop when production XPC app-to-app benchmark artifacts prove launchd Mach XPC startup, IOSurface XPC object handoff, producer/client frame exchange, 8K/16K allocation, and claim-gate status. Production XPC vs classic claims are ready only for rows with matching same-session classic Syphon measurements; 8K/16K rows remain blocked until the classic benchmark runner provides matching rows.
+Stop when production XPC app-to-app benchmark artifacts prove launchd Mach XPC startup, IOSurface XPC object handoff, producer/client frame exchange, 8K/16K allocation, and claim-gate status. Production XPC vs classic claims are ready only for rows with matching same-session classic Syphon measurements.
 
 ### Summary Format
 
@@ -712,4 +712,65 @@ claim status:
 8K/16K status:
 remaining risks:
 next recommended goal:
+```
+
+## Goal 13: 8K/16K Classic Claim Unblock
+
+### Short Slash Command
+
+```text
+/goal Unblock 8K/16K production XPC v2-vs-classic claims by adding matching classic benchmark matrices and rerunning the claim gate.
+```
+
+### Read First
+
+- `AGENTS.md`
+- `TODO.md`
+- `VALIDATION.md`
+- `docs/specification.md`
+
+### Allowed Edit Paths
+
+- `scripts/run_performance_claim_gate.py`
+- `GOALS.md`
+- `TODO.md`
+- `VALIDATION.md`
+- `README.md`
+- `docs/specification.md`
+- `docs/troubleshooting.md`
+- `docs/release_checklist.md`
+- sibling classic benchmark runner: `../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py`
+
+### Forbidden Edit Paths
+
+- Syphon26 product transport code
+- classic Syphon framework product code
+- committed benchmark result folders
+- broader public claims that are not emitted ready by the same-session gate
+
+### Required Commands
+
+```bash
+python3 -m py_compile ../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 ../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py --transport syphon --matrix 8k60,16k60 --duration 0.25 --warmup 0.1 --clients 1 --poll-us 0 --csv-every 100 --no-build --output-dir /tmp/syphon-classic-8k16k-smoke
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 8k60,16k60 --duration 1 --warmup 0.25 --require-production-xpc-claim
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 8kmax,16kmax --duration 1 --warmup 0.25 --require-production-xpc-claim
+python3 -m py_compile scripts/run_performance_claim_gate.py
+git diff --check
+```
+
+### Stop Condition
+
+Stop when the classic runner accepts matching 8K/16K matrix names, the Syphon26 claim gate marks `productionXPCClaimStatus: ready` for fixed-FPS and max-throughput 8K/16K rows, and both affected repositories are committed and pushed.
+
+### Summary Format
+
+```text
+files changed:
+reports:
+commands run:
+results:
+8K/16K claim status:
+commits:
+remaining risks:
 ```
