@@ -165,7 +165,8 @@ The Test Pattern sample pair exercises the production XPC path with AppKit windo
 
 - `Syphon26TestPatternServerApp` publishes a GPU-generated IOSurface-backed pattern through a launchd Mach XPC service.
 - `Syphon26TestPatternClientApp` opens the received IOSurface texture and previews it with Metal.
-- `scripts/run_test_pattern_pair.sh` bootstraps a temporary production XPC service and verifies texture opening plus nonzero frame observation.
+- `scripts/run_test_pattern_pair.sh` bootstraps a temporary production XPC service and verifies texture opening, expected server frame count, minimum client observed frames, requested orientation, requested dimensions/FPS, production XPC scope, and passive-window flags.
+- The required smoke matrix covers `normal`, `flipY`, and `rotate180`.
 - The pattern includes color bars, top/bottom orientation bands, corner markers, and a moving frame tick for visual inspection.
 
 ## Goal 08 Cross-Process IOSurface Smoke

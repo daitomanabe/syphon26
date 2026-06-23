@@ -33,7 +33,9 @@ The AppKit samples use passive preview windows that cannot become key or main. T
 Use the Test Pattern pair to validate frame rate, top/bottom orientation, corner orientation, and color bars over the production XPC path:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720 --orientation normal
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 0.5 --fps 30 --width 640 --height 360 --orientation flipY
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 0.5 --fps 30 --width 640 --height 360 --orientation rotate180
 ```
 
 For manual visual inspection, keep the temporary launchd Mach XPC service alive while both passive AppKit windows are open:
@@ -42,4 +44,4 @@ For manual visual inspection, keep the temporary launchd Mach XPC service alive 
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --gui --fps 60 --width 1280 --height 720
 ```
 
-The server app publishes a GPU-generated IOSurface-backed pattern through production XPC. The client app opens the received IOSurface texture and previews it with Metal.
+The server app publishes a GPU-generated IOSurface-backed pattern through production XPC. The client app opens the received IOSurface texture and previews it with Metal. Smoke `status: ok` requires expected server frame count, minimum client observed frames, requested orientation, requested dimensions/FPS, production XPC scope, and passive-window flags.

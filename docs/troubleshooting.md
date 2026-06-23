@@ -45,10 +45,10 @@ Expected smoke output includes `canBecomeKey: false`, `canBecomeMain: false`, `i
 Run:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720 --orientation normal
 ```
 
-Expected output includes `status: ok`, `textureOpened: true`, `transportScope: app-to-app-syphon26-production-xpc`, and a nonzero client `framesObserved` value. The pattern contains color bars, top/bottom bands, corner markers, and a moving frame tick so orientation and color issues are visible in the client preview.
+Expected output includes `status: ok`, `expectedFrames`, `minClientObservedFrames`, and a `checks` object whose values are all `true`. The server must publish exactly `expectedFrames`; the client must report `textureOpened: true`, `transportScope: app-to-app-syphon26-production-xpc`, and `framesObserved >= minClientObservedFrames`. Rerun with `--orientation flipY` and `--orientation rotate180` to verify the alternate orientation modes. The pattern contains color bars, top/bottom bands, corner markers, and a moving frame tick so orientation and color issues are visible in the client preview.
 
 If the client reports `waiting for stream`, verify that the temporary launchd service was bootstrapped and that the server process is still running. The smoke script writes logs under `benchmark-reports/test-pattern/`.
 

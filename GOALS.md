@@ -804,6 +804,7 @@ remaining risks:
 - `VALIDATION.md`
 - `README.md`
 - `docs/integration.md`
+- `docs/specification.md`
 - `docs/troubleshooting.md`
 - `docs/release_checklist.md`
 
@@ -820,7 +821,9 @@ remaining risks:
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternServerApp
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternClientApp
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720 --orientation normal
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 0.5 --fps 30 --width 640 --height 360 --orientation flipY
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 0.5 --fps 30 --width 640 --height 360 --orientation rotate180
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternServerApp --smoke --help-json
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternClientApp --smoke --help-json
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
@@ -829,9 +832,11 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 git diff --check
 ```
 
+Before commit/push, run the `github-push-privacy-guard` absolute-path scan against README, docs, scripts, control files, package files, source, tests, and examples. It must produce no matches.
+
 ### Stop Condition
 
-Stop when the server app publishes a GPU-generated test pattern over production XPC, the client app opens and previews the received IOSurface texture, smoke validation proves frame receipt and texture opening, passive-window checks pass, and the repository is committed and pushed.
+Stop when the server app publishes a GPU-generated test pattern over production XPC, the client app opens and previews the received IOSurface texture, smoke validation proves normal/`flipY`/`rotate180` runs with expected frame-count gates, texture opening, requested dimensions/FPS, requested orientation, production-XPC scope, and passive-window checks, and the repository is committed and pushed.
 
 ### Summary Format
 

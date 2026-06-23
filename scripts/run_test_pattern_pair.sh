@@ -169,11 +169,50 @@ import json
 from pathlib import Path
 server = json.loads(Path("$server_summary").read_text())
 client = json.loads(Path("$client_summary").read_text())
-status = "ok" if client.get("textureOpened") and client.get("framesObserved", 0) > 0 else "failed"
+target_fps = max(int("$fps"), 1)
+target_width = int("$width")
+target_height = int("$height")
+expected_orientation = "$orientation"
+expected_frames = max(1, int(max(float("$duration"), 0.1) * target_fps))
+min_client_observed_frames = max(1, expected_frames - 1)
+
+checks = {
+  "serverTextureOpened": server.get("textureOpened") is True,
+  "clientTextureOpened": client.get("textureOpened") is True,
+  "serverFrameCount": server.get("framesPublished") == expected_frames,
+  "clientObservedFrameCount": client.get("framesObserved", 0) >= min_client_observed_frames,
+  "serverOrientation": server.get("orientationMode") == expected_orientation,
+  "clientOrientation": client.get("orientationMode") == expected_orientation,
+  "serverDimensions": server.get("width") == target_width and server.get("height") == target_height,
+  "clientDimensions": client.get("width") == target_width and client.get("height") == target_height,
+  "serverFPS": server.get("fpsTarget") == target_fps,
+  "clientFPS": client.get("fpsTarget") == target_fps,
+  "productionXPCScope": (
+    server.get("transportScope") == "app-to-app-syphon26-production-xpc"
+    and client.get("transportScope") == "app-to-app-syphon26-production-xpc"
+  ),
+  "passiveWindowFlags": all(
+    value is False
+    for value in [
+      server.get("windowCanBecomeKey"),
+      server.get("windowCanBecomeMain"),
+      server.get("windowIsKey"),
+      server.get("windowIsMain"),
+      client.get("windowCanBecomeKey"),
+      client.get("windowCanBecomeMain"),
+      client.get("windowIsKey"),
+      client.get("windowIsMain"),
+    ]
+  ),
+}
+status = "ok" if all(checks.values()) else "failed"
 print(json.dumps({
   "status": status,
   "serviceName": "$service_name",
   "runDir": "$run_dir",
+  "expectedFrames": expected_frames,
+  "minClientObservedFrames": min_client_observed_frames,
+  "checks": checks,
   "server": server,
   "client": client
 }, indent=2, sort_keys=True))
