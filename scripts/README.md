@@ -14,3 +14,4 @@ Current scripts:
 - `run_v2_app_to_app_benchmark.py`: run separate v2 producer/client benchmark processes over the file-backed Syphon26 IOSurface path.
 - `run_production_xpc_benchmark.py`: run separate v2 producer/client benchmark processes through a launchd Mach XPC service with IOSurface XPC object handoff.
 - `run_performance_claim_gate.py`: run same-session v2 in-process, v2 file-backed app-to-app, v2 production XPC, v1, and classic Syphon measurements and gate claim readiness.
+- `export_github_benchmark_report.py`: export sanitized claim-gate JSON into commit-ready Markdown/JSON under `docs/benchmarks/`.

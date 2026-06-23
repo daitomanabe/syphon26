@@ -2,50 +2,40 @@
 
 ## Active Goal
 
-Close the remaining Goal 14 completion gaps for the Syphon26 test-pattern server/client apps by making the smoke validation fail-fast for orientation modes, expected frame counts, production XPC texture opening, and passive-window state.
+Run and publish a GitHub-friendly classic Syphon vs Syphon26 comparison up to 16K, covering fixed-FPS stability and max-throughput rows.
 
-## Remaining Items To Complete
+## Checklist
 
-- [x] Reclassify the previously incomplete Goal 14 coverage: orientation modes were implemented but not required by validation.
-- [x] Reclassify the previously incomplete smoke gate: frame receipt was checked only as nonzero instead of against the expected frame count.
-- [x] Reclassify the previously incomplete passive-window gate: passive flags were emitted but not required by the smoke JSON status.
-- [x] Strengthen `scripts/run_test_pattern_pair.sh` so `status: ok` requires production XPC scope, texture opening, expected server frame count, minimum client observed frames, requested orientation, requested dimensions/FPS, and passive-window flags.
-- [x] Update `GOALS.md` and `VALIDATION.md` so Goal 14 requires normal, `flipY`, and `rotate180` smoke checks.
-- [x] Update docs to state the exact smoke output fields and manual visual orientation checks.
-- [x] Run the full Goal 14 validation matrix.
+- [x] Add Goal 15 for 1080p/4K/8K/16K classic-vs-Syphon26 comparison and GitHub report publication.
+- [x] Add a sanitized report exporter that converts claim-gate JSON into commit-ready Markdown/JSON under `docs/benchmarks/`.
+- [x] Run same-session claim gates for `1080p60,4k60,8k60,16k60` and `1080pmax,4kmax,8kmax,16kmax`.
+- [x] Export a readable report and update README/docs links.
+- [x] Run validation: script compile checks, benchmark gates, report export, `swift test`, privacy scan, and `git diff --check`.
 - [x] Commit and push.
 
 ## Completion Conditions
 
-- Normal 1280x720 at 60 FPS smoke reports `status: ok`.
-- `flipY` and `rotate180` smoke runs report `status: ok`.
-- Smoke output includes `expectedFrames`, `minClientObservedFrames`, and per-field `checks`.
-- `server.framesPublished == expectedFrames`.
-- `client.framesObserved >= minClientObservedFrames`.
-- Server/client `orientationMode` match the requested mode.
-- Server/client use `transportScope: app-to-app-syphon26-production-xpc`.
-- Server/client passive-window flags remain false for key/main capability and state.
-- `swift test`, focus audit, forbidden transport audit, privacy scan, and `git diff --check` pass.
+- The classic runner accepts 8K and 16K matrix names.
+- Claim-gate output includes classic Syphon, Syphon26 file-backed app-to-app, and Syphon26 production XPC rows for every requested matrix that the machine can complete.
+- `productionXPCClaimStatus` is `ready` for rows that have matching completed classic measurements.
+- The GitHub report clearly separates fixed-FPS stability rows from max-throughput rows.
+- The GitHub report includes ratios only when the same-session gate marked the corresponding comparison ready.
+- Committed report files contain no local absolute paths, usernames, or generated artifact paths.
 
 ## Validation Matrix
 
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternServerApp`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternClientApp`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720 --orientation normal`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 0.5 --fps 30 --width 640 --height 360 --orientation flipY`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 0.5 --fps 30 --width 640 --height 360 --orientation rotate180`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternServerApp --smoke --help-json`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternClientApp --smoke --help-json`
+- `python3 -m py_compile scripts/run_performance_claim_gate.py scripts/export_github_benchmark_report.py`
+- `python3 -m py_compile ../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py`
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 1080p60,4k60,8k60,16k60 --duration 1 --warmup 0.25 --require-production-xpc-claim --output benchmark-reports/performance-claim-gate/fixed`
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 1080pmax,4kmax,8kmax,16kmax --duration 1 --warmup 0.25 --require-production-xpc-claim --output benchmark-reports/performance-claim-gate/throughput`
+- `scripts/export_github_benchmark_report.py --fixed benchmark-reports/performance-claim-gate/fixed/latest.json --throughput benchmark-reports/performance-claim-gate/throughput/latest.json --markdown docs/benchmarks/classic-vs-syphon26-16k.md --json docs/benchmarks/classic-vs-syphon26-16k.json`
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`
-- `! rg -n "makeKeyAndOrderFront|orderFrontRegardless|orderFront\\(|orderOut\\(|screenSaver|floating|NSApp\\.activate|NSApplication\\.shared\\.activate|activate\\(ignoringOtherApps" Examples/TestPatternShared Examples/TestPatternServerApp Examples/TestPatternClientApp`
-- `! rg -n "^import Syphon$|SyphonServer|SyphonClient|SyphonMetalServer|SyphonServerDirectory|CGWindowListCreateImage|CGDisplayStream|getBytes\\(|replaceRegion\\(|CVPixelBufferLockBaseAddress|vImage" Examples/TestPatternShared Examples/TestPatternServerApp Examples/TestPatternClientApp scripts docs README.md`
-- The `github-push-privacy-guard` absolute-path scan must produce no matches.
 - `git diff --check`
+- The `github-push-privacy-guard` absolute-path scan must produce no matches.
 
 ## Constraints
 
-- Use production XPC with IOSurface XPC object handoff.
-- Keep pattern generation and preview on Metal/GPU paths.
-- Do not use CPU texture readback, screen capture, window capture, or preview capture as transport.
-- Preview windows must be passive and not become key/main.
-- The test pattern must include color bars, visible top/bottom orientation markers, corner markers, and a moving frame tick.
+- Do not commit raw `benchmark-reports/` generated folders.
+- Do not make product-wide speed claims outside the measured matrix and transport scope.
+- Do not edit Syphon26 transport core unless a validation failure proves a narrow fix is required.
+- Keep report wording explicit about same-session scope, resolution, pixel format, FPS target, render mode, process scope, and display state.

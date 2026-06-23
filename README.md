@@ -37,6 +37,8 @@ The current compatibility contract is native Syphon26 transport only. The core l
 
 The current benchmark contract is claim-gated. `scripts/run_benchmark_matrix.py` measures the v2 in-process transport-core harness, `scripts/run_v2_app_to_app_benchmark.py` measures a v2 file-backed app-to-app benchmark path, `scripts/run_production_xpc_benchmark.py` measures the launchd Mach XPC path with IOSurface XPC object handoff, and `scripts/run_performance_claim_gate.py` can run same-session v2, temporary `v1`, production XPC, and local classic Syphon measurements. Public v2-vs-classic Syphon benchmark claims are allowed only when the relevant gate marks them ready, and must name the measured app-to-app path. 8K/16K v2-vs-classic wording requires matching same-session classic rows.
 
+The current GitHub-readable benchmark report is [Classic Syphon vs Syphon26 through 16K](docs/benchmarks/classic-vs-syphon26-16k.md).
+
 The `Syphon26TestPatternServerApp` and `Syphon26TestPatternClientApp` examples provide a small production-XPC visual test pair. The server publishes a GPU-generated pattern with color bars, top/bottom orientation markers, corner markers, and a moving frame tick. The client opens the received IOSurface texture and previews it while reporting observed FPS. The smoke harness gates normal, `flipY`, and `rotate180` runs with expected frame counts and passive-window checks.
 
 ## Why Restart

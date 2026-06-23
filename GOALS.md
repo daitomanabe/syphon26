@@ -849,3 +849,71 @@ pattern checks:
 commit:
 remaining risks:
 ```
+
+## Goal 15: Classic Vs Syphon26 16K GitHub Report
+
+### Short Slash Command
+
+```text
+/goal Run classic Syphon vs Syphon26 comparisons up to 16K and publish a GitHub-readable report.
+```
+
+### Read First
+
+- `AGENTS.md`
+- `TODO.md`
+- `VALIDATION.md`
+- `docs/specification.md`
+- `docs/release_checklist.md`
+
+### Allowed Edit Paths
+
+- `scripts/run_performance_claim_gate.py`
+- `scripts/export_github_benchmark_report.py`
+- `scripts/README.md`
+- `GOALS.md`
+- `TODO.md`
+- `VALIDATION.md`
+- `README.md`
+- `docs/benchmarks/`
+- `docs/specification.md`
+- `docs/troubleshooting.md`
+- `docs/release_checklist.md`
+- sibling classic benchmark runner: `../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py`
+
+### Forbidden Edit Paths
+
+- Syphon26 product transport code unless a validation failure proves a narrow fix is required
+- classic Syphon framework product code
+- raw generated `benchmark-reports/` or sibling `benchmark-results/` folders
+- public speed claims that are not emitted ready by the same-session claim gate
+
+### Required Commands
+
+```bash
+python3 -m py_compile scripts/run_performance_claim_gate.py scripts/export_github_benchmark_report.py
+python3 -m py_compile ../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 1080p60,4k60,8k60,16k60 --duration 1 --warmup 0.25 --require-production-xpc-claim --output benchmark-reports/performance-claim-gate/fixed
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 1080pmax,4kmax,8kmax,16kmax --duration 1 --warmup 0.25 --require-production-xpc-claim --output benchmark-reports/performance-claim-gate/throughput
+scripts/export_github_benchmark_report.py --fixed benchmark-reports/performance-claim-gate/fixed/latest.json --throughput benchmark-reports/performance-claim-gate/throughput/latest.json --markdown docs/benchmarks/classic-vs-syphon26-16k.md --json docs/benchmarks/classic-vs-syphon26-16k.json
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+git diff --check
+```
+
+Before commit/push, run the `github-push-privacy-guard` absolute-path scan against README, docs, scripts, control files, package files, source, tests, and examples. It must produce no matches.
+
+### Stop Condition
+
+Stop when same-session fixed-FPS and max-throughput claim gates complete through 16K, the curated GitHub report is committed under `docs/benchmarks/` without local paths, and all emitted Syphon26-vs-classic ratio claims are scoped to rows marked ready by the gate.
+
+### Summary Format
+
+```text
+files changed:
+reports:
+commands run:
+results:
+claim status:
+commits:
+remaining risks:
+```
