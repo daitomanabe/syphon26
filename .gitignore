@@ -3,5 +3,7 @@
 DerivedData/
 dist/
 benchmark-results/
+benchmark-reports/
+__pycache__/
 *.xcuserdata/
 *.xcuserstate

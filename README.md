@@ -12,6 +12,7 @@ This branch uses a control layer before product code is written:
 - [PLAN.md](PLAN.md): phased development plan.
 - [GOALS.md](GOALS.md): copyable bounded goals with allowed edit paths.
 - [ACCEPTANCE.md](ACCEPTANCE.md): checkable phase acceptance criteria.
+- [VALIDATION.md](VALIDATION.md): required validation commands and claim gate rules.
 - [docs/specification.md](docs/specification.md): project-specific transport specification.
 - [docs/development_plan.md](docs/development_plan.md): execution strategy and milestones.
 - [docs/test_data.md](docs/test_data.md): deterministic fixture and benchmark data plan.
@@ -28,9 +29,17 @@ Start future implementation by running only one goal from `GOALS.md`.
 - No classic Syphon bridge in the core transport.
 - Control-plane setup that is explicit, inspectable, and easy to diagnose.
 
+## Current Scope
+
+The `v2` branch currently contains the API contract, validation rules, diagnostics taxonomy, deterministic Metal/IOSurface transport layers, a bounded file-backed cross-process IOSurface smoke path, CLI samples, AppKit sample shells, and benchmark harnesses.
+
+The current compatibility contract is native Syphon26 transport only. The core library does not import `Syphon.framework`, does not participate in the classic Syphon server directory, and does not claim compatibility with old or future official Syphon framework releases. A bridge can be considered later as a separate target after the native transport is stable.
+
+The current benchmark contract is claim-gated. `scripts/run_benchmark_matrix.py` measures the v2 in-process transport-core harness, `scripts/run_v2_app_to_app_benchmark.py` measures a v2 file-backed app-to-app benchmark path, `scripts/run_production_xpc_benchmark.py` measures the launchd Mach XPC path with IOSurface XPC object handoff, and `scripts/run_performance_claim_gate.py` can run same-session v2, temporary `v1`, production XPC, and local classic Syphon measurements. Public v2-vs-classic Syphon benchmark claims are allowed only when the relevant gate marks them ready, and must name the measured app-to-app path. 8K/16K production XPC rows can be reported as Syphon26 measurements, but 8K/16K v2-vs-classic claims remain blocked until matching classic rows exist.
+
 ## Why Restart
 
-The first prototype proved that high-rate publish/receive is possible, but the app-level failure mode around XPC/control-plane setup made the architecture too difficult to reason about. v2 will rebuild the system from smaller validated layers:
+The first prototype exposed an app-level failure mode around XPC/control-plane setup that made the architecture too difficult to reason about. v2 will rebuild the system from smaller validated layers:
 
 1. Core public API shape.
 2. In-process Metal texture validation.
