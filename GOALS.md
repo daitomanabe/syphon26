@@ -774,3 +774,73 @@ results:
 commits:
 remaining risks:
 ```
+
+## Goal 14: Test Pattern Server And Client Apps
+
+### Short Slash Command
+
+```text
+/goal Add small Syphon26 test-pattern server/client apps for visual frame-rate, orientation, and color checks.
+```
+
+### Read First
+
+- `AGENTS.md`
+- `TODO.md`
+- `VALIDATION.md`
+- `docs/specification.md`
+
+### Allowed Edit Paths
+
+- `Package.swift`
+- `Examples/TestPatternShared/`
+- `Examples/TestPatternServerApp/`
+- `Examples/TestPatternClientApp/`
+- `scripts/run_test_pattern_pair.sh`
+- `scripts/export_simple_ui_apps.sh`
+- `scripts/README.md`
+- `GOALS.md`
+- `TODO.md`
+- `VALIDATION.md`
+- `README.md`
+- `docs/integration.md`
+- `docs/troubleshooting.md`
+- `docs/release_checklist.md`
+
+### Forbidden Edit Paths
+
+- classic Syphon bridge targets
+- production benchmark result folders
+- Syphon26 transport core unless a compile failure proves a narrow helper is required
+- AppKit windows that steal focus or become key/main
+- CPU texture readback, screen capture, window capture, or preview capture as transport
+
+### Required Commands
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternServerApp
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternClientApp
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternServerApp --smoke --help-json
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternClientApp --smoke --help-json
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+! rg -n "makeKeyAndOrderFront|orderFrontRegardless|orderFront\\(|orderOut\\(|screenSaver|floating|NSApp\\.activate|NSApplication\\.shared\\.activate|activate\\(ignoringOtherApps" Examples/TestPatternShared Examples/TestPatternServerApp Examples/TestPatternClientApp
+! rg -n "^import Syphon$|SyphonServer|SyphonClient|SyphonMetalServer|SyphonServerDirectory|CGWindowListCreateImage|CGDisplayStream|getBytes\\(|replaceRegion\\(|CVPixelBufferLockBaseAddress|vImage" Examples/TestPatternShared Examples/TestPatternServerApp Examples/TestPatternClientApp scripts docs README.md
+git diff --check
+```
+
+### Stop Condition
+
+Stop when the server app publishes a GPU-generated test pattern over production XPC, the client app opens and previews the received IOSurface texture, smoke validation proves frame receipt and texture opening, passive-window checks pass, and the repository is committed and pushed.
+
+### Summary Format
+
+```text
+files changed:
+apps:
+commands run:
+results:
+pattern checks:
+commit:
+remaining risks:
+```

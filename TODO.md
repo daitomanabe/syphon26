@@ -2,31 +2,35 @@
 
 ## Active Goal
 
-Unblock 8K/16K production XPC v2-vs-classic claims by adding matching classic Syphon benchmark matrices and rerunning the same-session claim gate.
+Add small Syphon26 test-pattern server/client AppKit apps that send and receive a GPU-generated pattern for frame-rate, top/bottom orientation, and color verification.
 
 ## Checklist
 
-- [x] Add Goal 13 for 8K/16K classic claim unblock.
-- [x] Add `8k60`, `8kmax`, `16k60`, and `16kmax` to the sibling classic benchmark runner.
-- [x] Confirm the classic runner accepts 8K/16K with a short smoke.
-- [x] Enable 8K/16K classic rows in `scripts/run_performance_claim_gate.py`.
-- [x] Run fixed-FPS 8K/16K production XPC claim gate.
-- [x] Run max-throughput 8K/16K production XPC claim gate.
-- [x] Run Python compile and diff checks in both repositories.
-- [x] Run privacy scan, commit, and push both repositories.
+- [x] Add Goal 14 for test-pattern server/client apps.
+- [x] Add SwiftPM products and shared TestPattern target.
+- [x] Implement the server app with GPU-generated color/orientation/frame-tick pattern publishing over production XPC.
+- [x] Implement the client app with production XPC receive, passive Metal preview, and received-FPS telemetry.
+- [x] Add a smoke script that bootstraps the XPC service, runs server/client, and verifies frame receipt.
+- [x] Update docs and export script.
+- [x] Run build, smoke, test, focus, forbidden-pattern, privacy, and diff checks.
+- [x] Commit and push.
 
 ## Validation Matrix
 
-- `python3 -m py_compile ../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 ../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py --transport syphon --matrix 8k60,16k60 --duration 0.25 --warmup 0.1 --clients 1 --poll-us 0 --csv-every 100 --no-build --output-dir /tmp/syphon-classic-8k16k-smoke`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 8k60,16k60 --duration 1 --warmup 0.25 --require-production-xpc-claim`
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 8kmax,16kmax --duration 1 --warmup 0.25 --require-production-xpc-claim`
-- `python3 -m py_compile scripts/run_performance_claim_gate.py`
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternServerApp`
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternClientApp`
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720`
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternServerApp --smoke --help-json`
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternClientApp --smoke --help-json`
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`
+- `! rg -n "makeKeyAndOrderFront|orderFrontRegardless|orderFront\\(|orderOut\\(|screenSaver|floating|NSApp\\.activate|NSApplication\\.shared\\.activate|activate\\(ignoringOtherApps" Examples/TestPatternShared Examples/TestPatternServerApp Examples/TestPatternClientApp`
+- `! rg -n "^import Syphon$|SyphonServer|SyphonClient|SyphonMetalServer|SyphonServerDirectory|CGWindowListCreateImage|CGDisplayStream|getBytes\\(|replaceRegion\\(|CVPixelBufferLockBaseAddress|vImage" Examples/TestPatternShared Examples/TestPatternServerApp Examples/TestPatternClientApp scripts docs README.md`
 - `git diff --check`
 
 ## Constraints
 
-- 8K/16K claims must come from same-session production XPC and classic Syphon rows.
-- Fixed-FPS rows support stability wording only.
-- `fpsTarget: 0` rows are required for throughput speedup wording.
-- Do not edit classic framework product code for this goal; only the benchmark runner matrix names are in scope.
+- Use production XPC with IOSurface XPC object handoff.
+- Keep pattern generation and preview on Metal/GPU paths.
+- Do not use CPU texture readback, screen capture, window capture, or preview capture as transport.
+- Preview windows must be passive and not become key/main.
+- The test pattern must include color bars, visible top/bottom orientation markers, and a moving frame tick.

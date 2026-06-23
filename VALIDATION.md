@@ -2,29 +2,32 @@
 
 Run these commands from the Syphon26 repository root unless noted otherwise.
 
-## Required For Goal 13
+## Required For Goal 14
 
 ```bash
-python3 -m py_compile ../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 ../Syphon-Framework/Examples/SyphonMetalBenchmark/scripts/run_benchmark.py --transport syphon --matrix 8k60,16k60 --duration 0.25 --warmup 0.1 --clients 1 --poll-us 0 --csv-every 100 --no-build --output-dir /tmp/syphon-classic-8k16k-smoke
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 8k60,16k60 --duration 1 --warmup 0.25 --require-production-xpc-claim
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 8kmax,16kmax --duration 1 --warmup 0.25 --require-production-xpc-claim
-python3 -m py_compile scripts/run_performance_claim_gate.py
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternServerApp
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --product Syphon26TestPatternClientApp
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternServerApp --smoke --help-json
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run Syphon26TestPatternClientApp --smoke --help-json
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+! rg -n "makeKeyAndOrderFront|orderFrontRegardless|orderFront\\(|orderOut\\(|screenSaver|floating|NSApp\\.activate|NSApplication\\.shared\\.activate|activate\\(ignoringOtherApps" Examples/TestPatternShared Examples/TestPatternServerApp Examples/TestPatternClientApp
+! rg -n "^import Syphon$|SyphonServer|SyphonClient|SyphonMetalServer|SyphonServerDirectory|CGWindowListCreateImage|CGDisplayStream|getBytes\\(|replaceRegion\\(|CVPixelBufferLockBaseAddress|vImage" Examples/TestPatternShared Examples/TestPatternServerApp Examples/TestPatternClientApp scripts docs README.md
 git diff --check
 ```
 
-## Claim Gate Rules
+## Test Pattern Acceptance
 
-- 8K/16K v2-vs-classic claims require same-session production XPC and classic Syphon rows.
-- `productionXPCClaimStatus: ready` is required before making 8K/16K production XPC v2-vs-classic wording.
-- Fixed-FPS rows prove stability against the target FPS. They are not throughput speedup claims.
-- Throughput speedup claims require `fpsTarget: 0` rows.
-- If a claim status is `blocked` or `partial`, use the blocker text from the report instead of a broader speed claim.
+- Server pattern generation uses Metal and publishes over production XPC.
+- Client opens the received IOSurface-backed texture and previews it with Metal.
+- The pattern includes color bars, top/bottom orientation markers, corner markers, and a moving frame tick.
+- Smoke output includes `transportScope: app-to-app-syphon26-production-xpc`, `textureOpened: true`, and nonzero received frames.
+- Preview windows are passive: they must not become key/main or activate the app.
 
-## Extended Matrix
-
-Use this for the full fixed-FPS and throughput matrix:
+## Manual Run
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_performance_claim_gate.py --matrix 1080p60,4k60,8k60,16k60,1080pmax,4kmax,8kmax,16kmax --duration 1 --warmup 0.25 --require-production-xpc-claim
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/run_test_pattern_pair.sh --gui --duration 0 --fps 60 --width 1280 --height 720
 ```
+
+The script bootstraps a temporary launchd Mach XPC service, opens the server and client apps, and prints the service name and log directory.

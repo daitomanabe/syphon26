@@ -9,6 +9,8 @@ cd "$ROOT_DIR"
 
 swift build --product Syphon26SimpleServerApp
 swift build --product Syphon26SimpleClientApp
+swift build --product Syphon26TestPatternServerApp
+swift build --product Syphon26TestPatternClientApp
 
 dist_dir="$ROOT_DIR/dist"
 mkdir -p "$dist_dir"
@@ -53,3 +55,5 @@ PLIST
 
 create_app "Syphon26SimpleServerApp" "Syphon26SimpleServerApp"
 create_app "Syphon26SimpleClientApp" "Syphon26SimpleClientApp"
+create_app "Syphon26TestPatternServerApp" "Syphon26TestPatternServerApp"
+create_app "Syphon26TestPatternClientApp" "Syphon26TestPatternClientApp"

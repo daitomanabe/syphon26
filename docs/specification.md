@@ -161,6 +161,13 @@ The current samples exercise the implemented in-process transport and verified c
 
 The sample scope includes the in-process path plus a bounded file-backed cross-process IOSurface smoke. The samples do not claim persistent launchd/XPC service transport.
 
+The Test Pattern sample pair exercises the production XPC path with AppKit windows:
+
+- `Syphon26TestPatternServerApp` publishes a GPU-generated IOSurface-backed pattern through a launchd Mach XPC service.
+- `Syphon26TestPatternClientApp` opens the received IOSurface texture and previews it with Metal.
+- `scripts/run_test_pattern_pair.sh` bootstraps a temporary production XPC service and verifies texture opening plus nonzero frame observation.
+- The pattern includes color bars, top/bottom orientation bands, corner markers, and a moving frame tick for visual inspection.
+
 ## Goal 08 Cross-Process IOSurface Smoke
 
 The CLI samples also include a bounded file-backed control-plane smoke path for validating separate-process IOSurface texture opening before the real XPC service is completed.

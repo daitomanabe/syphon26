@@ -7,6 +7,7 @@ Do not cut a release until each item is checked from source-of-truth commands.
 - `scripts/verify_control_plane.sh` passes.
 - `scripts/run_simple_pair.sh` passes.
 - `scripts/export_simple_ui_apps.sh` exports both local `.app` bundles.
+- `scripts/run_test_pattern_pair.sh --duration 1 --fps 60 --width 1280 --height 720` proves the production-XPC test-pattern server/client pair.
 - `scripts/run_benchmark_matrix.py` produces JSON and Markdown reports.
 - `scripts/run_v2_app_to_app_benchmark.py --matrix 1080p60 --duration 1 --warmup 0.25` produces server/client JSON reports.
 - `scripts/run_production_xpc_benchmark.py --matrix 1080p60 --duration 1 --warmup 0.25` produces launchd Mach XPC server/client JSON reports.

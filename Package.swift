@@ -13,6 +13,8 @@ let package = Package(
         .executable(name: "Syphon26SimpleClient", targets: ["Syphon26SimpleClient"]),
         .executable(name: "Syphon26SimpleServerApp", targets: ["Syphon26SimpleServerApp"]),
         .executable(name: "Syphon26SimpleClientApp", targets: ["Syphon26SimpleClientApp"]),
+        .executable(name: "Syphon26TestPatternServerApp", targets: ["Syphon26TestPatternServerApp"]),
+        .executable(name: "Syphon26TestPatternClientApp", targets: ["Syphon26TestPatternClientApp"]),
         .executable(name: "Syphon26Benchmark", targets: ["Syphon26Benchmark"]),
         .executable(name: "Syphon26AppToAppBenchmark", targets: ["Syphon26AppToAppBenchmark"]),
         .executable(name: "Syphon26ProductionXPCBenchmark", targets: ["Syphon26ProductionXPCBenchmark"])
@@ -67,6 +69,30 @@ let package = Package(
             name: "Syphon26SimpleClientApp",
             dependencies: ["Syphon26SimpleUIShared"],
             path: "Examples/SimpleClientApp",
+            swiftSettings: [
+                .enableUpcomingFeature("ExistentialAny")
+            ]
+        ),
+        .target(
+            name: "Syphon26TestPatternShared",
+            dependencies: ["Syphon26"],
+            path: "Examples/TestPatternShared",
+            swiftSettings: [
+                .enableUpcomingFeature("ExistentialAny")
+            ]
+        ),
+        .executableTarget(
+            name: "Syphon26TestPatternServerApp",
+            dependencies: ["Syphon26TestPatternShared"],
+            path: "Examples/TestPatternServerApp",
+            swiftSettings: [
+                .enableUpcomingFeature("ExistentialAny")
+            ]
+        ),
+        .executableTarget(
+            name: "Syphon26TestPatternClientApp",
+            dependencies: ["Syphon26TestPatternShared"],
+            path: "Examples/TestPatternClientApp",
             swiftSettings: [
                 .enableUpcomingFeature("ExistentialAny")
             ]
