@@ -10,6 +10,8 @@ Syphon26 is a test and research project, not a replacement for the official Syph
 
 The official Syphon project remains the mainstream, production-ready, and primary ecosystem for Syphon workflows. The author expects to continue using the official Syphon framework for normal production work. Syphon26 exists to explore native Metal/IOSurface transport behavior, explicit control-plane design, diagnostics, and benchmark methodology in a separate clean-room codebase.
 
+If you need a stable Syphon-compatible workflow today, use the official Syphon framework. Syphon26 is not intended to redirect users or production projects away from that ecosystem.
+
 This repository should not be read as claiming compatibility with, superseding, or redirecting users away from the official Syphon framework. If a future bridge to classic or newer official Syphon releases is useful, it should be designed as a separate compatibility target rather than as the core Syphon26 transport contract.
 
 ## Goal-Based Development
