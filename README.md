@@ -4,6 +4,14 @@ Syphon26 v2 is a clean-room restart of Syphon26: a modern macOS frame-sharing tr
 
 The previous implementation is preserved on the `v1` branch. This branch intentionally starts from a minimal package so the transport, API, validation, and sample applications can be rebuilt without carrying over hidden assumptions from the first prototype.
 
+## Project Positioning
+
+Syphon26 is a test and research project, not a replacement for the official Syphon framework.
+
+The official Syphon project remains the mainstream, production-ready, and primary ecosystem for Syphon workflows. The author expects to continue using the official Syphon framework for normal production work. Syphon26 exists to explore native Metal/IOSurface transport behavior, explicit control-plane design, diagnostics, and benchmark methodology in a separate clean-room codebase.
+
+This repository should not be read as claiming compatibility with, superseding, or redirecting users away from the official Syphon framework. If a future bridge to classic or newer official Syphon releases is useful, it should be designed as a separate compatibility target rather than as the core Syphon26 transport contract.
+
 ## Goal-Based Development
 
 This branch uses a control layer before product code is written:
