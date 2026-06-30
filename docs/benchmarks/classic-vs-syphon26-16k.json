@@ -3,28 +3,28 @@
     "Public classic fixed-FPS stability comparison: in the same-session 1080p60 app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 1.001x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
     "Public classic fixed-FPS stability comparison: in the same-session 4k60 app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 1.001x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
     "Public classic fixed-FPS stability comparison: in the same-session 8k60 app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 1.001x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Public classic fixed-FPS stability comparison: in the same-session 16k60 app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 1.000x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Public classic fixed-FPS stability comparison: in the same-session 16k60 app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 1.001x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
     "Production XPC fixed-FPS stability comparison: in the same-session 1080p60 app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 1.001x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Production XPC fixed-FPS stability comparison: in the same-session 4k60 app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 1.000x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Production XPC fixed-FPS stability comparison: in the same-session 8k60 app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 1.018x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Production XPC fixed-FPS stability comparison: in the same-session 16k60 app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 1.000x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Public classic throughput comparison: in the same-session 1080pmax app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 2.678x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Public classic throughput comparison: in the same-session 4kmax app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 2.075x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Public classic throughput comparison: in the same-session 8kmax app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 1.300x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Public classic throughput comparison: in the same-session 16kmax app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 1.964x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Production XPC throughput comparison: in the same-session 1080pmax app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 4.519x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Production XPC throughput comparison: in the same-session 4kmax app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 3.324x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Production XPC throughput comparison: in the same-session 8kmax app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 3.703x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
-    "Production XPC throughput comparison: in the same-session 16kmax app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 2.388x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state."
+    "Production XPC fixed-FPS stability comparison: in the same-session 4k60 app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 1.001x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Production XPC fixed-FPS stability comparison: in the same-session 8k60 app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 1.001x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Production XPC fixed-FPS stability comparison: in the same-session 16k60 app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 1.001x classic Syphon receive FPS against the 60 FPS target under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Public classic throughput comparison: in the same-session 1080pmax app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 4.161x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Public classic throughput comparison: in the same-session 4kmax app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 4.904x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Public classic throughput comparison: in the same-session 8kmax app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 5.304x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Public classic throughput comparison: in the same-session 16kmax app-to-app benchmark, the v2 file-backed Syphon26 path received frames at 2.897x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Production XPC throughput comparison: in the same-session 1080pmax app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 6.176x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Production XPC throughput comparison: in the same-session 4kmax app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 5.138x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Production XPC throughput comparison: in the same-session 8kmax app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 7.233x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state.",
+    "Production XPC throughput comparison: in the same-session 16kmax app-to-app benchmark, the v2 launchd production XPC path using IOSurface XPC object handoff received frames at 3.455x classic Syphon receive FPS under matched resolution, pixel format, render mode, process scope, and display state."
   ],
   "fixed": {
-    "generatedAt": "2026-06-23T15:38:13.960251+00:00",
+    "generatedAt": "2026-06-30T06:56:49.839859+00:00",
     "internalV2V1ClaimStatus": "ready",
     "productionXPCClaimStatus": "ready",
     "publicClassicClaimStatus": "ready",
-    "sameSessionID": "20260623T153730Z"
+    "sameSessionID": "20260630T065532Z"
   },
-  "generatedAt": "2026-06-23T15:40:56.265335+00:00",
+  "generatedAt": "2026-06-30T07:10:15.636186+00:00",
   "interpretationLimits": [
     "Rows are same-session measurements within each claim-gate invocation.",
     "Fixed-FPS rows are stability evidence, not max-speed evidence.",
@@ -37,171 +37,171 @@
   "rows": [
     {
       "blockers": [],
-      "classicReceiveFPS": 59.92923855149837,
+      "classicReceiveFPS": 59.93059787175264,
       "displayState": "headless-cli-no-preview",
-      "fileVsClassicRatio": 1.0010353496167759,
+      "fileVsClassicRatio": 1.001103856924898,
       "fpsLabel": "60 FPS target",
       "fpsTarget": 60,
       "matrix": "1080p60",
       "mode": "fixed-fps",
       "pixelFormat": "bgra8",
       "productionXPCClaimStatus": "ready",
-      "productionXPCVsClassicRatio": 1.0010060744405098,
+      "productionXPCVsClassicRatio": 1.0010985604391691,
       "publicClassicClaimStatus": "ready",
       "renderMode": "clear",
       "resolution": {
         "height": 1080,
         "width": 1920
       },
-      "syphon26FileReceiveFPS": 59.99128626566634,
-      "syphon26ProductionXPCReceiveFPS": 59.98953182664425
+      "syphon26FileReceiveFPS": 59.996752677226645,
+      "syphon26ProductionXPCReceiveFPS": 59.9964352556703
     },
     {
       "blockers": [],
-      "classicReceiveFPS": 59.96108026217473,
+      "classicReceiveFPS": 59.943286157448185,
       "displayState": "headless-cli-no-preview",
-      "fileVsClassicRatio": 1.0005929660790045,
+      "fileVsClassicRatio": 1.0008934949782817,
       "fpsLabel": "60 FPS target",
       "fpsTarget": 60,
       "matrix": "4k60",
       "mode": "fixed-fps",
       "pixelFormat": "bgra8",
       "productionXPCClaimStatus": "ready",
-      "productionXPCVsClassicRatio": 1.0004665402095085,
+      "productionXPCVsClassicRatio": 1.0008150182984996,
       "publicClassicClaimStatus": "ready",
       "renderMode": "clear",
       "resolution": {
         "height": 2160,
         "width": 3840
       },
-      "syphon26FileReceiveFPS": 59.99663514883066,
-      "syphon26ProductionXPCReceiveFPS": 59.989054517122604
+      "syphon26FileReceiveFPS": 59.99684518261157,
+      "syphon26ProductionXPCReceiveFPS": 59.9921410325387
     },
     {
       "blockers": [],
-      "classicReceiveFPS": 58.92800225770562,
+      "classicReceiveFPS": 59.91946075365287,
       "displayState": "headless-cli-no-preview",
-      "fileVsClassicRatio": 1.0011170918418055,
+      "fileVsClassicRatio": 1.0012619795322948,
       "fpsLabel": "60 FPS target",
       "fpsTarget": 60,
       "matrix": "8k60",
       "mode": "fixed-fps",
       "pixelFormat": "bgra8",
       "productionXPCClaimStatus": "ready",
-      "productionXPCVsClassicRatio": 1.0179769021726635,
+      "productionXPCVsClassicRatio": 1.0012959376060238,
       "publicClassicClaimStatus": "ready",
       "renderMode": "clear",
       "resolution": {
         "height": 4320,
         "width": 7680
       },
-      "syphon26FileReceiveFPS": 58.993830248281604,
-      "syphon26ProductionXPCReceiveFPS": 59.987345189522884
+      "syphon26FileReceiveFPS": 59.99507788671012,
+      "syphon26ProductionXPCReceiveFPS": 59.9971126361762
     },
     {
       "blockers": [],
-      "classicReceiveFPS": 59.976019588122874,
+      "classicReceiveFPS": 59.923285716177354,
       "displayState": "headless-cli-no-preview",
-      "fileVsClassicRatio": 1.0002881351604835,
+      "fileVsClassicRatio": 1.0012445809070927,
       "fpsLabel": "60 FPS target",
       "fpsTarget": 60,
       "matrix": "16k60",
       "mode": "fixed-fps",
       "pixelFormat": "bgra8",
       "productionXPCClaimStatus": "ready",
-      "productionXPCVsClassicRatio": 1.0003669042569274,
+      "productionXPCVsClassicRatio": 1.0011697041321472,
       "publicClassicClaimStatus": "ready",
       "renderMode": "clear",
       "resolution": {
         "height": 8640,
         "width": 15360
       },
-      "syphon26FileReceiveFPS": 59.99330078815206,
-      "syphon26ProductionXPCReceiveFPS": 59.99802504502332
+      "syphon26FileReceiveFPS": 59.99786509346997,
+      "syphon26ProductionXPCReceiveFPS": 59.993378231091405
     },
     {
       "blockers": [],
-      "classicReceiveFPS": 637.64291996688,
+      "classicReceiveFPS": 618.2754070152511,
       "displayState": "headless-cli-no-preview",
-      "fileVsClassicRatio": 2.6780129542452094,
+      "fileVsClassicRatio": 4.161143782269368,
       "fpsLabel": "max throughput",
       "fpsTarget": 0,
       "matrix": "1080pmax",
       "mode": "max-throughput",
       "pixelFormat": "bgra8",
       "productionXPCClaimStatus": "ready",
-      "productionXPCVsClassicRatio": 4.519417014976513,
+      "productionXPCVsClassicRatio": 6.175819126729511,
       "publicClassicClaimStatus": "ready",
       "renderMode": "clear",
       "resolution": {
         "height": 1080,
         "width": 1920
       },
-      "syphon26FileReceiveFPS": 1707.6159998540459,
-      "syphon26ProductionXPCReceiveFPS": 2881.774261977624
+      "syphon26FileReceiveFPS": 2572.732865631575,
+      "syphon26ProductionXPCReceiveFPS": 3818.3570842312606
     },
     {
       "blockers": [],
-      "classicReceiveFPS": 539.3250122728841,
+      "classicReceiveFPS": 486.3338037295366,
       "displayState": "headless-cli-no-preview",
-      "fileVsClassicRatio": 2.074804368331756,
+      "fileVsClassicRatio": 4.903874028354893,
       "fpsLabel": "max throughput",
       "fpsTarget": 0,
       "matrix": "4kmax",
       "mode": "max-throughput",
       "pixelFormat": "bgra8",
       "productionXPCClaimStatus": "ready",
-      "productionXPCVsClassicRatio": 3.324333001321992,
+      "productionXPCVsClassicRatio": 5.1376772987843395,
       "publicClassicClaimStatus": "ready",
       "renderMode": "clear",
       "resolution": {
         "height": 2160,
         "width": 3840
       },
-      "syphon26FileReceiveFPS": 1118.993891414358,
-      "syphon26ProductionXPCReceiveFPS": 1792.8959367371372
+      "syphon26FileReceiveFPS": 2384.9197092203203,
+      "syphon26ProductionXPCReceiveFPS": 2498.626143052679
     },
     {
       "blockers": [],
-      "classicReceiveFPS": 487.70148604970865,
+      "classicReceiveFPS": 327.6601209088054,
       "displayState": "headless-cli-no-preview",
-      "fileVsClassicRatio": 1.2998870342808364,
+      "fileVsClassicRatio": 5.304207696332612,
       "fpsLabel": "max throughput",
       "fpsTarget": 0,
       "matrix": "8kmax",
       "mode": "max-throughput",
       "pixelFormat": "bgra8",
       "productionXPCClaimStatus": "ready",
-      "productionXPCVsClassicRatio": 3.702871659699528,
+      "productionXPCVsClassicRatio": 7.23296588998669,
       "publicClassicClaimStatus": "ready",
       "renderMode": "clear",
       "resolution": {
         "height": 4320,
         "width": 7680
       },
-      "syphon26FileReceiveFPS": 633.9568383155125,
-      "syphon26ProductionXPCReceiveFPS": 1805.8960110868109
+      "syphon26FileReceiveFPS": 1737.97733510576,
+      "syphon26ProductionXPCReceiveFPS": 2369.9544780423043
     },
     {
       "blockers": [],
-      "classicReceiveFPS": 272.9502434459863,
+      "classicReceiveFPS": 243.6959790927191,
       "displayState": "headless-cli-no-preview",
-      "fileVsClassicRatio": 1.963549594751924,
+      "fileVsClassicRatio": 2.89674188114909,
       "fpsLabel": "max throughput",
       "fpsTarget": 0,
       "matrix": "16kmax",
       "mode": "max-throughput",
       "pixelFormat": "bgra8",
       "productionXPCClaimStatus": "ready",
-      "productionXPCVsClassicRatio": 2.388326742275681,
+      "productionXPCVsClassicRatio": 3.4550430884198646,
       "publicClassicClaimStatus": "ready",
       "renderMode": "clear",
       "resolution": {
         "height": 8640,
         "width": 15360
       },
-      "syphon26FileReceiveFPS": 535.9513399058054,
-      "syphon26ProductionXPCReceiveFPS": 651.8943657327065
+      "syphon26FileReceiveFPS": 705.9243489055125,
+      "syphon26ProductionXPCReceiveFPS": 841.980108240011
     }
   ],
   "schemaVersion": 1,
@@ -214,10 +214,10 @@
   },
   "source": "Syphon26 run_performance_claim_gate.py",
   "throughput": {
-    "generatedAt": "2026-06-23T15:39:00.633484+00:00",
+    "generatedAt": "2026-06-30T06:56:49.839859+00:00",
     "internalV2V1ClaimStatus": "ready",
     "productionXPCClaimStatus": "ready",
     "publicClassicClaimStatus": "ready",
-    "sameSessionID": "20260623T153819Z"
+    "sameSessionID": "20260630T065532Z"
   }
 }
